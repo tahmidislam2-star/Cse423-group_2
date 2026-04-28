@@ -65,7 +65,7 @@ selected_cards = []
 executing_cards = False
 current_card_step = 0
 current_step_anim = 0.0
-step_duration = 20.0
+step_duration =30.0
 move_start = (0.0, 0.0)
 move_target = (0.0, 0.0)
 current_action = ""
@@ -77,6 +77,9 @@ click_regions = []
 
 TILE_SIZE = 96.0
 
+base_x = 180
+y1 = 30
+y2 = 110 
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18, color=(1, 1, 1)):
     glColor3f(color[0], color[1], color[2])
@@ -225,7 +228,7 @@ def draw_box_outline(sx, sy, sz):
 
 def draw_ground_plane():
     cx, cy = level_center
-    glColor3f(0.08, 0.10, 0.15)
+    glColor3f(0.38, 0.80, 0.78)
     glBegin(GL_QUADS)
     glVertex3f(cx - 1800, cy - 1800, -12)
     glVertex3f(cx + 1800, cy - 1800, -12)
@@ -253,24 +256,30 @@ def draw_tile(gx, gy, color):
 def draw_carrot(gx, gy):
     wx, wy = grid_to_world(gx, gy)
     glPushMatrix()
-    glTranslatef(wx, wy, 18)
-    glRotatef(-90, 1, 0, 0)
-    glColor3f(1.0, 0.52, 0.1)
-    gluCylinder(gluNewQuadric(), 10, 2, 28, 10, 3)
-    glTranslatef(0, 0, 24)
-    glColor3f(0.2, 0.85, 0.25)
-    glPushMatrix()
-    glRotatef(25, 0, 1, 0)
-    gluCylinder(gluNewQuadric(), 2.5, 0, 12, 6, 2)
-    glPopMatrix()
-    glPushMatrix()
-    glRotatef(-25, 0, 1, 0)
-    gluCylinder(gluNewQuadric(), 2.5, 0, 12, 6, 2)
-    glPopMatrix()
-    glPushMatrix()
-    glRotatef(90, 0, 1, 0)
-    gluCylinder(gluNewQuadric(), 2.5, 0, 10, 6, 2)
-    glPopMatrix()
+    glTranslatef(wx, wy, 16)
+
+    q = gluNewQuadric()
+
+    # Tall slim orange body pointing up
+    glColor3f(1.0, 0.45, 0.05)
+    gluCylinder(q, 6, 1, 48, 10, 4)   # slim, tall, pointy tip
+
+    # Move to top
+    glTranslatef(0, 0, 46)
+
+    # Small teal/blue leaves like in picture
+    glColor3f(0.20, 0.75, 0.85)        # teal-blue color!
+    for angle in [0, 60, 120, 180, 240, 300]:
+        glPushMatrix()
+        glRotatef(angle, 0, 0, 1)
+        glRotatef(35, 1, 0, 0)         # fan outward
+        gluCylinder(q, 1.5, 0, 14, 5, 2)
+        glPopMatrix()
+
+    # Short upright center leaf
+    glColor3f(0.15, 0.80, 0.90)
+    gluCylinder(q, 1.5, 0, 18, 5, 2)
+
     glPopMatrix()
 
 
@@ -319,50 +328,77 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     glTranslatef(world_x, world_y, 18 + hop)
     glRotatef(angle, 0, 0, 1)
 
-    glColor3f(color[0], color[1], color[2])
-
+    # --- BODY — big white box ---
+    glColor3f(1.0, 1.0, 1.0)
     glPushMatrix()
     glTranslatef(0, 0, 18)
-    draw_cube_scaled(34, 24, 24)
-    draw_box_outline(34, 24, 24)
+    draw_cube_scaled(42, 30, 36)
+    draw_box_outline(42, 30, 36)
     glPopMatrix()
 
+    # --- HEAD — white box ---
+    glColor3f(1.0, 1.0, 1.0)
     glPushMatrix()
-    glTranslatef(0, 18, 32)
-    draw_cube_scaled(24, 20, 20)
-    draw_box_outline(24, 20, 20)
+    glTranslatef(0, 16, 46)
+    draw_cube_scaled(36, 30, 30)
+    draw_box_outline(36, 30, 30)
     glPopMatrix()
 
-    ear_col = (min(color[0] + 0.08, 1), min(color[1] + 0.08, 1), min(color[2] + 0.08, 1))
-    glColor3f(ear_col[0], ear_col[1], ear_col[2])
-    for ex in (-7, 7):
+    # --- EARS — tall white ---
+    for ex in (-10, 10):
+        glColor3f(1.0, 1.0, 1.0)
         glPushMatrix()
-        glTranslatef(ex, 24, 52)
-        draw_cube_scaled(7, 7, 28)
-        draw_box_outline(7, 7, 28)
+        glTranslatef(ex, 20, 72)
+        draw_cube_scaled(10, 8, 32)
+        draw_box_outline(10, 8, 32)
         glPopMatrix()
 
-    glColor3f(1, 1, 1)
-    glPushMatrix()
-    glTranslatef(0, -16, 20)
-    draw_cube_scaled(9, 9, 9)
-    draw_box_outline(9, 9, 9)
-    glPopMatrix()
-
-    foot_z = 4 + hop * 0.18
-    glColor3f(color[0] * 0.9, color[1] * 0.9, color[2] * 0.9)
-    for sx in (-9, 9):
+        # Pink inside ear
+        glColor3f(1.0, 0.55, 0.75)
         glPushMatrix()
-        glTranslatef(sx, 8, foot_z)
-        draw_cube_scaled(8, 12, 5)
-        draw_box_outline(8, 12, 5)
+        glTranslatef(ex, 21, 72)
+        draw_cube_scaled(5, 4, 24)
         glPopMatrix()
 
-    glColor3f(0, 0, 0)
-    for ex in (-5, 5):
+    # --- EYES — dark navy blue circles (boxes) ---
+    glColor3f(0.10, 0.20, 0.55)
+    for ex in (-10, 10):
         glPushMatrix()
-        glTranslatef(ex, 28, 34)
-        draw_cube_scaled(2.8, 2.8, 2.8)
+        glTranslatef(ex, 30, 48)
+        draw_cube_scaled(9, 5, 9)
+        glPopMatrix()
+
+    # --- NOSE — pink triangle box ---
+    glColor3f(0.95, 0.40, 0.60)
+    glPushMatrix()
+    glTranslatef(0, 30, 40)
+    draw_cube_scaled(7, 4, 5)
+    glPopMatrix()
+
+    # --- WHISKERS — dark lines left and right ---
+    glColor3f(0.05, 0.05, 0.05)
+    glLineWidth(2)
+    glBegin(GL_LINES)
+    # left whiskers
+    glVertex3f(-18, 29, 41)
+    glVertex3f(-4,  29, 41)
+    glVertex3f(-18, 29, 38)
+    glVertex3f(-4,  29, 38)
+    # right whiskers
+    glVertex3f(4,  29, 41)
+    glVertex3f(18, 29, 41)
+    glVertex3f(4,  29, 38)
+    glVertex3f(18, 29, 38)
+    glEnd()
+    glLineWidth(1)
+
+    # --- LEGS — teal/blue boxes at bottom ---
+    glColor3f(0.25, 0.65, 0.80)
+    for lx in (-11, 11):
+        glPushMatrix()
+        glTranslatef(lx, 0, 6)
+        draw_cube_scaled(14, 18, 12)
+        draw_box_outline(14, 18, 12)
         glPopMatrix()
 
     glPopMatrix()
@@ -662,6 +698,7 @@ def draw_card_slot(rect, text, fill, extra=None):
     register_click(text, rect, extra)
 
 
+
 def build_menu_ui():
     begin_2d()
     draw_text(330, 700, "Rabbit Coding Adventure", GLUT_BITMAP_TIMES_ROMAN_24, (0.95, 0.95, 0.35))
@@ -692,6 +729,7 @@ def build_customize_ui():
 
 def build_game_ui():
     begin_2d()
+    draw_rect(0, 0, WINDOW_W, 220, (0.10, 0.12, 0.18), True)
     draw_text(20, 770, "Level %d/3" % (current_level + 1), color=(1, 1, 0.5))
     draw_text(20, 740, "Facing: %s" % DIR_NAMES[rabbit_dir], color=(1, 1, 1))
     draw_text(20, 710, "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
@@ -709,11 +747,17 @@ def build_game_ui():
     sx = 230
     for i in range(max_cards):
         rect = (sx + i * 65, 145, sx + i * 65 + 55, 185)
+        slot_colors = {
+            CARD_FORWARD: (0.20, 0.72, 0.38),
+            CARD_LEFT:    (0.18, 0.52, 0.90),
+            CARD_RIGHT:   (0.95, 0.55, 0.10),
+            CARD_WAIT:    (0.70, 0.30, 0.85),
+        }
         if i < len(selected_cards):
-            draw_card_slot(rect, selected_cards[i], (0.95, 0.85, 0.45), i)
+            sc = slot_colors.get(selected_cards[i], (0.95, 0.85, 0.45))
+            draw_card_slot(rect, selected_cards[i], sc, i)
         else:
             draw_card_slot(rect, "-", (0.28, 0.28, 0.32), None)
-
     draw_text(295, 115, "Click cards below to add. Click selected cards to remove.", color=(0.95, 0.95, 0.95))
     base_x = 220
     y1 = 45
@@ -725,11 +769,15 @@ def build_game_ui():
         CARD_WAIT: (0.85, 0.75, 0.98),
     }
     for i, c in enumerate(TOOL_CARDS):
-        rect = (base_x + i * 135, y1, base_x + i * 135 + 110, y2)
+        rect = (base_x + i * 155, y1, base_x + i * 155 + 130, y2)
         draw_card_slot(rect, c, colors[c], c)
 
     draw_button((790, 135, 930, 190), CARD_PLAY, (0.20, 0.65, 0.30))
     draw_button((790, 60, 930, 115), CARD_CLEAR, (0.70, 0.25, 0.25))
+    if executing_cards and current_card_step < len(selected_cards):
+        hi_rect = (sx + current_card_step * 65 - 3, 142,
+                sx + current_card_step * 65 + 58, 188)
+        draw_rect(hi_rect[0], hi_rect[1], hi_rect[2], hi_rect[3], (1, 1, 0.2), False)
     end_2d()
 
 
@@ -905,9 +953,9 @@ def idle():
 def draw_level_scene():
     draw_ground_plane()
     for gx, gy in walkable_tiles:
-        base = (0.38, 0.58, 0.38) if (gx + gy) % 2 == 0 else (0.33, 0.50, 0.33)
+        base = (0.29, 0.78, 0.65) if (gx + gy) % 2 == 0 else (0.22, 0.68, 0.58)
         if (gx, gy) in visited_tiles:
-            base = (0.58, 0.82, 0.58)
+            base = (0.75, 0.65, 0.85) 
         if flash_tile == (gx, gy) and flash_amount > 0:
             boost = flash_amount * 0.3
             base = (min(base[0] + boost, 1), min(base[1] + boost, 1), min(base[2] + boost, 1))
@@ -954,7 +1002,7 @@ def show_failed_overlay():
 def showScreen():
     global click_regions
     click_regions = []
-    glClearColor(0.08, 0.10, 0.15, 1.0)
+    glClearColor(0.45, 0.88, 0.85, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
     glViewport(0, 0, WINDOW_W, WINDOW_H)
