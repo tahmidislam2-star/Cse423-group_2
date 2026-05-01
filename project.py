@@ -237,24 +237,78 @@ def draw_ground_plane():
     glEnd()
 
 
-def draw_tile(gx, gy, color):
+def draw_tile(gx, gy, color, height=1):
     wx, wy = grid_to_world(gx, gy)
-    glPushMatrix()
-    glTranslatef(wx, wy, 8)
+    
+    # Each cube is 16 units tall, stacked `height` times
+    cube_h = 16
+    total_h = cube_h * height
+    half = 44  # half of tile width (88/2)
+
+    # --- TOP FACE ---
     glColor3f(color[0], color[1], color[2])
-    draw_cube_scaled(88, 88, 16)
+    glBegin(GL_QUADS)
+    glVertex3f(wx - half, wy - half, total_h)
+    glVertex3f(wx + half, wy - half, total_h)
+    glVertex3f(wx + half, wy + half, total_h)
+    glVertex3f(wx - half, wy + half, total_h)
+    glEnd()
+
+    # --- LEFT FACE (front-left side, darker) ---
+    glColor3f(color[0] * 0.60, color[1] * 0.60, color[2] * 0.60)
+    glBegin(GL_QUADS)
+    glVertex3f(wx - half, wy - half, 0)
+    glVertex3f(wx + half, wy - half, 0)
+    glVertex3f(wx + half, wy - half, total_h)
+    glVertex3f(wx - half, wy - half, total_h)
+    glEnd()
+
+    # --- RIGHT FACE (front-right side, medium shade) ---
+    glColor3f(color[0] * 0.75, color[1] * 0.75, color[2] * 0.75)
+    glBegin(GL_QUADS)
+    glVertex3f(wx + half, wy - half, 0)
+    glVertex3f(wx + half, wy + half, 0)
+    glVertex3f(wx + half, wy + half, total_h)
+    glVertex3f(wx + half, wy - half, total_h)
+    glEnd()
+
+    # --- TOP FACE OUTLINE ---
     glColor3f(0.08, 0.08, 0.08)
     glBegin(GL_LINE_LOOP)
-    glVertex3f(-44, -44, 8.5)
-    glVertex3f(44, -44, 8.5)
-    glVertex3f(44, 44, 8.5)
-    glVertex3f(-44, 44, 8.5)
+    glVertex3f(wx - half, wy - half, total_h + 0.5)
+    glVertex3f(wx + half, wy - half, total_h + 0.5)
+    glVertex3f(wx + half, wy + half, total_h + 0.5)
+    glVertex3f(wx - half, wy + half, total_h + 0.5)
     glEnd()
-    glPopMatrix()
 
+    # --- VERTICAL EDGE OUTLINES (corners of the cube) ---
+    glColor3f(0.08, 0.08, 0.08)
+    glLineWidth(1)
+    glBegin(GL_LINES)
+    # Front-left vertical edge
+    glVertex3f(wx - half, wy - half, 0)
+    glVertex3f(wx - half, wy - half, total_h)
+    # Front-right vertical edge
+    glVertex3f(wx + half, wy - half, 0)
+    glVertex3f(wx + half, wy - half, total_h)
+    # Back-right vertical edge
+    glVertex3f(wx + half, wy + half, 0)
+    glVertex3f(wx + half, wy + half, total_h)
+    # Bottom edge of left face
+    glVertex3f(wx - half, wy - half, 0)
+    glVertex3f(wx + half, wy - half, 0)
+    # Bottom edge of right face
+    glVertex3f(wx + half, wy - half, 0)
+    glVertex3f(wx + half, wy + half, 0)
+    glEnd()
+
+def get_tile_z(gx, gy):
+    """Returns the world Z of the top surface of a tile."""
+    return current_level_data().get("heights", {}).get((gx, gy), 1) * 16
 
 def draw_carrot(gx, gy):
     wx, wy = grid_to_world(gx, gy)
+    z = get_tile_z(gx, gy)
     glPushMatrix()
     glTranslatef(wx, wy, 16)
 
@@ -285,6 +339,7 @@ def draw_carrot(gx, gy):
 
 def draw_portal(gx, gy, active):
     wx, wy = grid_to_world(gx, gy)
+    z = get_tile_z(gx, gy) 
     glPushMatrix()
     glTranslatef(wx, wy, 18)
     col = (0.78, 0.22, 1.0) if active else (0.35, 0.24, 0.50)
@@ -309,6 +364,7 @@ def draw_portal(gx, gy, active):
 
 def draw_trap(gx, gy):
     wx, wy = grid_to_world(gx, gy)
+    z = get_tile_z(gx, gy) 
     glPushMatrix()
     glTranslatef(wx, wy, 9)
     glColor3f(0.82, 0.18, 0.18)
@@ -404,7 +460,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     glPopMatrix()
 
 
-def make_level(tiles, start, start_facing, carrots_list, portal, trap_list, max_cards_level):
+def make_level(tiles, start, start_facing, carrots_list, portal, trap_list, max_cards_level, heights=None):
     return {
         "tiles": set(tiles),
         "start": start,
@@ -413,6 +469,7 @@ def make_level(tiles, start, start_facing, carrots_list, portal, trap_list, max_
         "portal": portal,
         "traps": set(trap_list),
         "max_cards": max_cards_level,
+        "heights": heights or {},
     }
 
 
@@ -426,12 +483,15 @@ def build_levels():
                 (0, 2), (1, 2), (2, 2), (3, 2),
                                 (3, 3), (4, 3),
             ],
-            (0, 0),
-            1,
+            (0, 0), 1,
             [(2, 0), (2, 2), (4, 3)],
-            (3, 3),
-            [],
-            10,
+            (3, 3), [], 10,
+            heights={
+                (0, 0): 3, (1, 0): 3, (2, 0): 3,
+                (0, 1): 2,             (2, 1): 2,
+                (0, 2): 1, (1, 2): 1, (2, 2): 1, (3, 2): 1,
+                                       (3, 3): 2, (4, 3): 2,
+            },
         ),
         make_level(
             [
@@ -440,31 +500,42 @@ def build_levels():
                 (0, 2), (1, 2), (2, 2), (3, 2),
                 (0, 3),                 (3, 3),
                 (0, 4), (1, 4), (2, 4), (3, 4), (4, 4),
-                                            (4, 5),
+                                                 (4, 5),
             ],
-            (0, 0),
-            1,
+            (0, 0), 1,
             [(2, 0), (3, 2), (1, 4), (4, 5)],
-            (4, 4),
-            [(1, 1), (0, 3)],
-            18,
+            (4, 4), [(1, 1), (0, 3)], 18,
+            heights={
+                (0, 0): 2, (1, 0): 2, (2, 0): 2,
+                           (1, 1): 1,              (3, 1): 1,
+                (0, 2): 3, (1, 2): 3, (2, 2): 3,  (3, 2): 3,
+                (0, 3): 2,                          (3, 3): 2,
+                (0, 4): 1, (1, 4): 1, (2, 4): 1,  (3, 4): 1, (4, 4): 1,
+                                                               (4, 5): 2,
+            },
         ),
         make_level(
             [
                 (0, 0), (1, 0), (2, 0),
                         (1, 1),         (3, 1),
                 (0, 2), (1, 2), (2, 2), (3, 2), (4, 2),
-                (0, 3),                 (3, 3),         (5, 3),
+                (0, 3),                 (3, 3),          (5, 3),
                 (0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 4),
-                                        (3, 5),         (5, 5),
-                                        (3, 6), (4, 6), (5, 6),
+                                        (3, 5),          (5, 5),
+                                        (3, 6), (4, 6),  (5, 6),
             ],
-            (0, 0),
-            1,
+            (0, 0), 1,
             [(2, 0), (4, 2), (0, 4), (5, 4), (5, 6)],
-            (4, 6),
-            [(1, 1), (3, 3), (5, 5)],
-            24,
+            (4, 6), [(1, 1), (3, 3), (5, 5)], 24,
+            heights={
+                (0, 0): 3, (1, 0): 3, (2, 0): 3,
+                           (1, 1): 1,              (3, 1): 1,
+                (0, 2): 2, (1, 2): 2, (2, 2): 2,  (3, 2): 2, (4, 2): 2,
+                (0, 3): 1,                          (3, 3): 1,             (5, 3): 1,
+                (0, 4): 3, (1, 4): 3, (2, 4): 3,  (3, 4): 3, (4, 4): 3,  (5, 4): 3,
+                                                    (3, 5): 2,             (5, 5): 2,
+                                                    (3, 6): 1, (4, 6): 1,  (5, 6): 1,
+            },
         ),
     ]
 
@@ -727,57 +798,234 @@ def build_customize_ui():
     end_2d()
 
 
+def draw_circle_2d(cx, cy, r, color, segments=32):
+    glColor3f(color[0], color[1], color[2])
+    glBegin(GL_TRIANGLE_FAN)
+    glVertex2f(cx, cy)
+    for i in range(segments + 1):
+        a = deg_to_rad(360.0 / segments * i)
+        glVertex2f(cx + cos_approx(a) * r, cy + sin_approx(a) * r)
+    glEnd()
+
+
+def draw_arrow_icon(cx, cy, size=10):
+    """Draw a simple right-pointing arrow at (cx,cy)."""
+    glColor3f(1, 1, 1)
+    glBegin(GL_TRIANGLES)
+    glVertex2f(cx - size * 0.5, cy - size * 0.7)
+    glVertex2f(cx - size * 0.5, cy + size * 0.7)
+    glVertex2f(cx + size * 0.8, cy)
+    glEnd()
+
+
+def draw_rotate_icon(cx, cy, clockwise=True):
+    """Draw a curved rotate arrow icon."""
+    glColor3f(1, 1, 1)
+    glLineWidth(3)
+    glBegin(GL_LINE_STRIP)
+    start = 30 if clockwise else 150
+    end   = 300 if clockwise else -120
+    steps = 16
+    for i in range(steps + 1):
+        t = i / steps
+        a = deg_to_rad(start + (end - start) * t)
+        glVertex2f(cx + cos_approx(a) * 11, cy + sin_approx(a) * 11)
+    glEnd()
+    glLineWidth(1)
+    # arrowhead tip
+    tip_a = deg_to_rad(end)
+    perp  = deg_to_rad(end + (40 if clockwise else -40))
+    tx = cx + cos_approx(tip_a) * 11
+    ty = cy + sin_approx(tip_a) * 11
+    glBegin(GL_TRIANGLES)
+    glVertex2f(tx, ty)
+    glVertex2f(tx + cos_approx(perp) * 7, ty + sin_approx(perp) * 7)
+    glVertex2f(tx + cos_approx(tip_a + deg_to_rad(180)) * 5,
+               ty + sin_approx(tip_a + deg_to_rad(180)) * 5)
+    glEnd()
+
+
 def build_game_ui():
     begin_2d()
-    draw_rect(0, 0, WINDOW_W, 220, (0.10, 0.12, 0.18), True)
-    draw_text(20, 770, "Level %d/3" % (current_level + 1), color=(1, 1, 0.5))
-    draw_text(20, 740, "Facing: %s" % DIR_NAMES[rabbit_dir], color=(1, 1, 1))
-    draw_text(20, 710, "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
-    draw_text(20, 680, level_message, color=(0.82, 1, 0.82))
-    draw_text(20, 650, "Cards limit: %d" % max_cards, color=(1, 1, 1))
+
+    # ── HUD top-left ──────────────────────────────────────────────
+    draw_rect(0, WINDOW_H - 120, 280, WINDOW_H, (0.10, 0.12, 0.18), True)
+    draw_text(16, WINDOW_H - 28,  "Level %d/3" % (current_level + 1),  color=(1, 1, 0.5))
+    draw_text(16, WINDOW_H - 52,  "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
+    draw_text(16, WINDOW_H - 76,  level_message,  color=(0.82, 1, 0.82))
+    draw_text(16, WINDOW_H - 100, "Cards: %d/%d" % (len(selected_cards), max_cards), color=(1, 1, 1))
 
     if state == STATE_PAUSED:
-        draw_text(430, 720, "PAUSED", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.7, 0.4))
+        draw_text(430, WINDOW_H - 60, "PAUSED", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.7, 0.4))
     elif state == STATE_GAMEOVER:
-        draw_text(395, 720, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.35, 0.35))
+        draw_text(370, WINDOW_H - 60, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.35, 0.35))
     elif state == STATE_WIN:
-        draw_text(370, 720, "YOU FINISHED ALL LEVELS", GLUT_BITMAP_TIMES_ROMAN_24, (0.65, 1, 0.5))
+        draw_text(320, WINDOW_H - 60, "YOU FINISHED ALL LEVELS!", GLUT_BITMAP_TIMES_ROMAN_24, (0.65, 1, 0.5))
 
-    draw_text(320, 200, "Selected Card Sequence", color=(1, 1, 1))
-    sx = 230
-    for i in range(max_cards):
-        rect = (sx + i * 65, 145, sx + i * 65 + 55, 185)
-        slot_colors = {
-            CARD_FORWARD: (0.20, 0.72, 0.38),
-            CARD_LEFT:    (0.18, 0.52, 0.90),
-            CARD_RIGHT:   (0.95, 0.55, 0.10),
-            CARD_WAIT:    (0.70, 0.30, 0.85),
-        }
-        if i < len(selected_cards):
-            sc = slot_colors.get(selected_cards[i], (0.95, 0.85, 0.45))
-            draw_card_slot(rect, selected_cards[i], sc, i)
-        else:
-            draw_card_slot(rect, "-", (0.28, 0.28, 0.32), None)
-    draw_text(295, 115, "Click cards below to add. Click selected cards to remove.", color=(0.95, 0.95, 0.95))
-    base_x = 220
-    y1 = 45
-    y2 = 95
-    colors = {
-        CARD_FORWARD: (0.55, 0.95, 0.55),
-        CARD_LEFT: (0.60, 0.85, 1.0),
-        CARD_RIGHT: (1.0, 0.82, 0.50),
-        CARD_WAIT: (0.85, 0.75, 0.98),
+    # ── CARD STRIP background (green pill) ───────────────────────
+    strip_x1 = 30
+    strip_x2 = WINDOW_W - 100
+    strip_y1 = 14
+    strip_y2 = 82
+    strip_cx = (strip_x1 + strip_x2) / 2
+    strip_cy = (strip_y1 + strip_y2) / 2
+    r = (strip_y2 - strip_y1) / 2   # 34
+
+    # pill shape: rect + two semicircles
+    glColor3f(0.20, 0.72, 0.25)
+    glBegin(GL_QUADS)
+    glVertex2f(strip_x1 + r, strip_y1)
+    glVertex2f(strip_x2 - r, strip_y1)
+    glVertex2f(strip_x2 - r, strip_y2)
+    glVertex2f(strip_x1 + r, strip_y2)
+    glEnd()
+    draw_circle_2d(strip_x1 + r, strip_cy, r, (0.20, 0.72, 0.25))
+    draw_circle_2d(strip_x2 - r, strip_cy, r, (0.20, 0.72, 0.25))
+
+    # ── CARD SLOTS inside the strip ───────────────────────────────
+    slot_colors = {
+        CARD_FORWARD: (0.10, 0.55, 0.20),
+        CARD_LEFT:    (0.10, 0.55, 0.20),
+        CARD_RIGHT:   (0.10, 0.55, 0.20),
+        CARD_WAIT:    (0.10, 0.55, 0.20),
     }
-    for i, c in enumerate(TOOL_CARDS):
-        rect = (base_x + i * 155, y1, base_x + i * 155 + 130, y2)
-        draw_card_slot(rect, c, colors[c], c)
+    slot_w = 52
+    slot_gap = 14      # gap between slots (for the separator arrows)
+    slot_start = strip_x1 + r + 8
+    num_visible = min(max_cards, 10)
 
-    draw_button((790, 135, 930, 190), CARD_PLAY, (0.20, 0.65, 0.30))
-    draw_button((790, 60, 930, 115), CARD_CLEAR, (0.70, 0.25, 0.25))
-    if executing_cards and current_card_step < len(selected_cards):
-        hi_rect = (sx + current_card_step * 65 - 3, 142,
-                sx + current_card_step * 65 + 58, 188)
-        draw_rect(hi_rect[0], hi_rect[1], hi_rect[2], hi_rect[3], (1, 1, 0.2), False)
+    for i in range(num_visible):
+        sx = slot_start + i * (slot_w + slot_gap)
+        sy1, sy2 = strip_y1 + 6, strip_y2 - 6
+        scx = sx + slot_w / 2
+        scy = (sy1 + sy2) / 2
+
+        if i < len(selected_cards):
+            col = (0.12, 0.48, 0.18)
+            draw_rect(sx, sy1, sx + slot_w, sy2, col, True)
+            # card icon
+            card = selected_cards[i]
+            if card == CARD_FORWARD:
+                draw_arrow_icon(scx, scy, 10)
+            elif card == CARD_LEFT:
+                draw_rotate_icon(scx, scy, clockwise=False)
+            elif card == CARD_RIGHT:
+                draw_rotate_icon(scx, scy, clockwise=True)
+            else:
+                draw_text(sx + 8, scy - 6, "W", color=(1, 1, 1))
+            # highlight current executing card
+            if executing_cards and i == current_card_step:
+                draw_rect(sx - 2, sy1 - 2, sx + slot_w + 2, sy2 + 2, (1, 1, 0.2), False)
+            register_click(selected_cards[i], (sx, sy1, sx + slot_w, sy2), i)
+        else:
+            # empty slot — darker green
+            draw_rect(sx, sy1, sx + slot_w, sy2, (0.12, 0.52, 0.18), True)
+            draw_rect(sx, sy1, sx + slot_w, sy2, (0.08, 0.38, 0.12), False)
+
+        # separator arrow between slots
+        if i < num_visible - 1:
+            ax = sx + slot_w + slot_gap / 2
+            draw_arrow_icon(ax, scy, 6)
+
+    # ── ORANGE PLAY BUTTON (big circle, right of strip) ──────────
+    play_cx = WINDOW_W - 52
+    play_cy = strip_cy
+    play_r  = 34
+
+    # shadow/dark ring
+    draw_circle_2d(play_cx, play_cy, play_r + 3, (0.55, 0.28, 0.00))
+    # main orange circle
+    draw_circle_2d(play_cx, play_cy, play_r, (0.95, 0.52, 0.05))
+    # play triangle inside
+    glColor3f(1, 1, 1)
+    glBegin(GL_TRIANGLES)
+    glVertex2f(play_cx - 10, play_cy - 16)
+    glVertex2f(play_cx - 10, play_cy + 16)
+    glVertex2f(play_cx + 16, play_cy)
+    glEnd()
+    register_click(CARD_PLAY, (play_cx - play_r, play_cy - play_r,
+                               play_cx + play_r, play_cy + play_r))
+
+    # ── TOOL CARDS (bottom-left, below strip) ────────────────────
+    tool_colors = {
+        CARD_FORWARD: (0.20, 0.72, 0.25),
+        CARD_LEFT:    (0.20, 0.72, 0.25),
+        CARD_RIGHT:   (0.20, 0.72, 0.25),
+        CARD_WAIT:    (0.55, 0.30, 0.80),
+    }
+    # Only show FWD and LEFT/RIGHT as two tool buttons (like doodle)
+    TOOL_DISPLAY = [
+        (CARD_FORWARD, "FWD"),
+        (CARD_LEFT,    "LFT"),
+        (CARD_RIGHT,   "RGT"),
+        (CARD_WAIT,    "STP"),
+    ]
+    tool_btn_w  = 64
+    tool_btn_h  = 52
+    tool_gap    = 12
+    tool_total  = len(TOOL_DISPLAY) * tool_btn_w + (len(TOOL_DISPLAY) - 1) * tool_gap
+    tool_start_x = (WINDOW_W - tool_total) // 2   # centered horizontally
+    tool_y1 = strip_y2 + 10
+    tool_y2 = tool_y1 + tool_btn_h
+
+    btn_colors = {
+        CARD_FORWARD: (0.20, 0.72, 0.25),
+        CARD_LEFT:    (0.20, 0.72, 0.25),
+        CARD_RIGHT:   (0.20, 0.72, 0.25),
+        CARD_WAIT:    (0.55, 0.30, 0.80),
+    }
+    border_colors = {
+        CARD_FORWARD: (0.10, 0.45, 0.12),
+        CARD_LEFT:    (0.10, 0.45, 0.12),
+        CARD_RIGHT:   (0.10, 0.45, 0.12),
+        CARD_WAIT:    (0.35, 0.15, 0.55),
+    }
+    labels = {
+        CARD_FORWARD: "Forward",
+        CARD_LEFT:    "Left",
+        CARD_RIGHT:   "Right",
+        CARD_WAIT:    "Wait",
+    }
+
+    for i, (card, _) in enumerate(TOOL_DISPLAY):
+        bx = tool_start_x + i * (tool_btn_w + tool_gap)
+        bcx = bx + tool_btn_w / 2
+        bcy = (tool_y1 + tool_y2) / 2
+
+        # button background
+        draw_rect(bx, tool_y1, bx + tool_btn_w, tool_y2, btn_colors[card], True)
+        draw_rect(bx, tool_y1, bx + tool_btn_w, tool_y2, border_colors[card], False)
+
+        # icon inside button
+        if card == CARD_FORWARD:
+            draw_arrow_icon(bcx, bcy + 4, 11)
+        elif card == CARD_LEFT:
+            draw_rotate_icon(bcx, bcy + 4, clockwise=False)
+        elif card == CARD_RIGHT:
+            draw_rotate_icon(bcx, bcy + 4, clockwise=True)
+        elif card == CARD_WAIT:
+            # two vertical bars = pause/wait icon
+            glColor3f(1, 1, 1)
+            draw_rect(bcx - 8, bcy - 6, bcx - 2, bcy + 10, (1, 1, 1), True)
+            draw_rect(bcx + 2, bcy - 6, bcx + 8, bcy + 10, (1, 1, 1), True)
+
+        # label below icon
+        draw_text(bx + tool_btn_w // 2 - len(labels[card]) * 3,
+                  tool_y1 + 6, labels[card],
+                  font=GLUT_BITMAP_HELVETICA_12,
+                  color=(1, 1, 1))
+
+        register_click(card, (bx, tool_y1, bx + tool_btn_w, tool_y2), card)
+
+
+    # also register hidden clicks for RIGHT and WAIT (keyboard/cheat use)
+    for c in [CARD_RIGHT, CARD_WAIT]:
+        register_click(c, (0, 0, 0, 0), c)
+
+    # ── CLEAR button ─────────────────────────────────────────────
+    draw_button((WINDOW_W - 160, strip_y2 + 12, WINDOW_W - 100, strip_y2 + 52),
+                CARD_CLEAR, (0.70, 0.20, 0.20))
+
     end_2d()
 
 
@@ -951,7 +1199,6 @@ def idle():
 
 
 def draw_level_scene():
-    draw_ground_plane()
     for gx, gy in walkable_tiles:
         base = (0.29, 0.78, 0.65) if (gx + gy) % 2 == 0 else (0.22, 0.68, 0.58)
         if (gx, gy) in visited_tiles:
@@ -959,7 +1206,8 @@ def draw_level_scene():
         if flash_tile == (gx, gy) and flash_amount > 0:
             boost = flash_amount * 0.3
             base = (min(base[0] + boost, 1), min(base[1] + boost, 1), min(base[2] + boost, 1))
-        draw_tile(gx, gy, base)
+        tile_height = current_level_data().get("heights", {}).get((gx, gy), 1)
+        draw_tile(gx, gy, base, height=tile_height)
 
     for tx, ty in traps:
         draw_trap(tx, ty)
@@ -973,20 +1221,25 @@ def draw_level_scene():
     if executing_cards and current_action == CARD_FORWARD and current_step_anim > 0:
         t = current_step_anim / step_duration
         if t > 1.0:
-            t = 1.0
+            t = 1.0 
         draw_x = move_start[0] + (move_target[0] - move_start[0]) * t
         draw_y = move_start[1] + (move_target[1] - move_start[1]) * t
+        h_start = current_level_data().get("heights", {}).get(
+            (int(round(move_start[0])), int(round(move_start[1]))), 1)
+        h_end   = current_level_data().get("heights", {}).get(
+            (int(round(move_target[0])), int(round(move_target[1]))), 1)
+        tile_z  = (h_start + (h_end - h_start) * t) * 16
     else:
         draw_x = float(rabbit_grid_x)
         draw_y = float(rabbit_grid_y)
+        tile_z = current_level_data().get("heights", {}).get(
+            (rabbit_grid_x, rabbit_grid_y), 1) * 16
 
     wx, wy = grid_to_world(draw_x, draw_y)
-    draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height)
-
+    draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height + tile_z)
 
 def draw_customize_preview():
     set_perspective_camera()
-    draw_ground_plane()
     draw_tile(0, 0, (0.46, 0.62, 0.42))
     draw_rabbit(0, 0, 0, rabbit_colors[selected_color_index], 0)
 
@@ -1002,17 +1255,13 @@ def show_failed_overlay():
 def showScreen():
     global click_regions
     click_regions = []
-    glClearColor(0.45, 0.88, 0.85, 1.0)
+    glClearColor(0.38, 0.88, 0.84, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glEnable(GL_DEPTH_TEST)
     glViewport(0, 0, WINDOW_W, WINDOW_H)
 
     if state == STATE_MENU:
         set_perspective_camera()
-        draw_ground_plane()
-        draw_tile(-1, 0, (0.45, 0.60, 0.40))
-        draw_tile(0, 0, (0.36, 0.52, 0.34))
-        draw_tile(1, 0, (0.45, 0.60, 0.40))
         draw_rabbit(0, 0, 0, rabbit_colors[saved_color_index], 0)
         build_menu_ui()
     elif state == STATE_CUSTOMIZE:
