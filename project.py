@@ -26,9 +26,9 @@ state = STATE_MENU
 rabbit_colors = [
     (0.95, 0.95, 0.95),
     (1.00, 0.78, 0.82),
-    (0.72, 0.90, 1.00),
     (1.00, 0.85, 0.50),
-    (0.70, 1.00, 0.70),
+    (0.4, 0.4, 0.4),
+    (0.15, 0.15, 0.15),
 ]
 selected_color_index = 0
 saved_color_index = 0
@@ -65,7 +65,7 @@ selected_cards = []
 executing_cards = False
 current_card_step = 0
 current_step_anim = 0.0
-step_duration =30.0
+step_duration = 75.0
 move_start = (0.0, 0.0)
 move_target = (0.0, 0.0)
 current_action = ""
@@ -80,6 +80,15 @@ TILE_SIZE = 96.0
 base_x = 180
 y1 = 30
 y2 = 110 
+card_view_offset = 0
+MAX_VISIBLE_CARDS = 10
+
+clouds = [
+    {"x": -180, "y": 260, "z": 180, "base_z": 180, "phase": 0},
+    {"x": -30, "y": 260, "z": 180, "base_z": 180, "phase": 2.4},
+    {"x": -340, "y": 200, "z": 210, "base_z": 210, "phase": 3.6},
+]
+cloud_time = 0.0
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18, color=(1, 1, 1)):
     glColor3f(color[0], color[1], color[2])
@@ -381,11 +390,11 @@ def draw_trap(gx, gy):
 def draw_rabbit(world_x, world_y, direction, color, hop):
     angle = [0, -90, 180, 90][direction]
     glPushMatrix()
-    glTranslatef(world_x, world_y, 18 + hop)
+    glTranslatef(world_x, world_y, hop)
     glRotatef(angle, 0, 0, 1)
 
     # --- BODY — big white box ---
-    glColor3f(1.0, 1.0, 1.0)
+    glColor3f(color[0], color[1], color[2])
     glPushMatrix()
     glTranslatef(0, 0, 18)
     draw_cube_scaled(42, 30, 36)
@@ -393,7 +402,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     glPopMatrix()
 
     # --- HEAD — white box ---
-    glColor3f(1.0, 1.0, 1.0)
+    glColor3f(color[0], color[1], color[2])
     glPushMatrix()
     glTranslatef(0, 16, 46)
     draw_cube_scaled(36, 30, 30)
@@ -402,7 +411,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
 
     # --- EARS — tall white ---
     for ex in (-10, 10):
-        glColor3f(1.0, 1.0, 1.0)
+        glColor3f(color[0], color[1], color[2])
         glPushMatrix()
         glTranslatef(ex, 20, 72)
         draw_cube_scaled(10, 8, 32)
@@ -785,20 +794,23 @@ def draw_card_slot(rect, text, fill, extra=None):
 
 def build_menu_ui():
     begin_2d()
-    draw_text(330, 700, "Rabbit Coding Adventure", GLUT_BITMAP_TIMES_ROMAN_24, (0.95, 0.95, 0.35))
-    draw_text(260, 650, "Inspired by Celebrating 50 years of Kids Coding Doodle", color=(0.9, 0.9, 1))
-    draw_button((390, 450, 610, 515), "P", (0.25, 0.65, 0.35))
-    draw_text(445, 420, "Play", color=(1, 1, 1))
-    draw_button((390, 320, 610, 385), "C", (0.30, 0.40, 0.85))
-    draw_text(410, 290, "Customize Rabbit", color=(1, 1, 1))
-    draw_text(210, 170, "Arrows: rotate/move camera height   P pause/play   R restart   C cheat", color=(0.84, 0.84, 0.84))
+
+    draw_text(450, 720, "Card Hopper",
+              GLUT_BITMAP_TIMES_ROMAN_24,
+              (0.15, 0.15, 0.15))
+
+    draw_button((620, 470, 840, 540), "P", (0.25, 0.65, 0.35))
+    draw_text(705, 440, "Play", color=(1, 1, 1))
+
+    draw_button((620, 350, 840, 420), "C", (0.30, 0.40, 0.85))
+    draw_text(655, 320, "Customize Rabbit", color=(1, 1, 1))
     end_2d()
 
 
 def build_customize_ui():
     begin_2d()
-    draw_text(385, 700, "Customize Rabbit", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.92, 0.45))
-    draw_text(305, 650, "Click a color. It will stay selected when you play.", color=(1, 1, 1))
+    draw_text(405, 700, "Customize Rabbit", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.92, 0.45))
+    draw_text(445, 650, "Pick a color!", color=(1, 1, 1))
     base_x = 240
     for i, col in enumerate(rabbit_colors):
         rect = (base_x + i * 110, 430, base_x + i * 110 + 70, 500)
@@ -806,8 +818,7 @@ def build_customize_ui():
         draw_rect(rect[0] - 3, rect[1] - 3, rect[2] + 3, rect[3] + 3, (1, 1, 0.2) if i == selected_color_index else (1, 1, 1), False)
         register_click("COLOR", rect, i)
     draw_button((290, 200, 460, 260), "BACK", (0.48, 0.24, 0.24))
-    draw_button((540, 200, 710, 260), "P", (0.20, 0.65, 0.30))
-    draw_text(585, 170, "Play", color=(1, 1, 1))
+    draw_button((540, 200, 710, 260), "PLAY", (0.20, 0.65, 0.30))
     end_2d()
 
 
@@ -905,19 +916,23 @@ def build_game_ui():
     slot_w = 52
     slot_gap = 14      # gap between slots (for the separator arrows)
     slot_start = strip_x1 + r + 8
-    num_visible = min(max_cards, 10)
+    num_visible = min(MAX_VISIBLE_CARDS, max_cards)
 
     for i in range(num_visible):
+        actual_index = i + card_view_offset
+
         sx = slot_start + i * (slot_w + slot_gap)
         sy1, sy2 = strip_y1 + 6, strip_y2 - 6
         scx = sx + slot_w / 2
         scy = (sy1 + sy2) / 2
 
-        if i < len(selected_cards):
+        if actual_index < len(selected_cards):
+            card = selected_cards[actual_index]
+
             col = (0.12, 0.48, 0.18)
             draw_rect(sx, sy1, sx + slot_w, sy2, col, True)
-            # card icon
-            card = selected_cards[i]
+
+            # draw icon
             if card == CARD_FORWARD:
                 draw_arrow_icon(scx, scy, 10)
             elif card == CARD_LEFT:
@@ -926,15 +941,15 @@ def build_game_ui():
                 draw_rotate_icon(scx, scy, clockwise=True)
             else:
                 draw_text(sx + 8, scy - 6, "W", color=(1, 1, 1))
-            # highlight current executing card
-            if executing_cards and i == current_card_step:
+
+            # highlight executing card
+            if executing_cards and actual_index == current_card_step:
                 draw_rect(sx - 2, sy1 - 2, sx + slot_w + 2, sy2 + 2, (1, 1, 0.2), False)
-            register_click(selected_cards[i], (sx, sy1, sx + slot_w, sy2), i)
+
+            register_click(card, (sx, sy1, sx + slot_w, sy2), actual_index)
         else:
-            # empty slot — darker green
             draw_rect(sx, sy1, sx + slot_w, sy2, (0.12, 0.52, 0.18), True)
             draw_rect(sx, sy1, sx + slot_w, sy2, (0.08, 0.38, 0.12), False)
-
         # separator arrow between slots
         if i < num_visible - 1:
             ax = sx + slot_w + slot_gap / 2
@@ -1036,14 +1051,14 @@ def build_game_ui():
         register_click(c, (0, 0, 0, 0), c)
 
     # ── CLEAR button ─────────────────────────────────────────────
-    draw_button((WINDOW_W - 160, strip_y2 + 12, WINDOW_W - 100, strip_y2 + 52),
+    draw_button((WINDOW_W - 190, strip_y2 + 12, WINDOW_W - 100, strip_y2 + 52),
                 CARD_CLEAR, (0.70, 0.20, 0.20))
 
     end_2d()
 
 
 def handle_ui_click(mx, my):
-    global state, selected_color_index, saved_color_index, selected_cards, level_message
+    global state, selected_color_index, saved_color_index, selected_cards, level_message, card_view_offset
     for name, rect, extra in click_regions:
         if not inside_rect(mx, my, rect):
             continue
@@ -1065,7 +1080,7 @@ def handle_ui_click(mx, my):
             if name == "BACK":
                 state = STATE_MENU
                 return
-            if name == "P":
+            if name == "PLAY":
                 saved_color_index = selected_color_index
                 reset_level(0)
                 return
@@ -1074,6 +1089,11 @@ def handle_ui_click(mx, my):
             if name in TOOL_CARDS and not executing_cards:
                 if len(selected_cards) < max_cards:
                     selected_cards.append(name)
+
+                    # shift view if more than visible
+                    if len(selected_cards) > MAX_VISIBLE_CARDS:
+                        card_view_offset += 1   
+
                     level_message = "Card added"
                 return
             if name == CARD_PLAY and not executing_cards and selected_cards:
@@ -1081,6 +1101,7 @@ def handle_ui_click(mx, my):
                 return
             if name == CARD_CLEAR and not executing_cards:
                 selected_cards = []
+                card_view_offset = 0
                 level_message = "Sequence cleared"
                 return
             if extra is not None and isinstance(extra, int) and name in TOOL_CARDS and not executing_cards:
@@ -1208,6 +1229,7 @@ def update_flash():
 def idle():
     update_execution()
     update_flash()
+    update_clouds()
     glutPostRedisplay()
 
 
@@ -1252,10 +1274,12 @@ def draw_level_scene():
     draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height + tile_z)
 
 def draw_customize_preview():
-    set_perspective_camera()
-    draw_tile(0, 0, (0.46, 0.62, 0.42))
-    draw_rabbit(0, 0, 0, rabbit_colors[selected_color_index], 0)
+    set_static_menu_camera()
 
+    glPushMatrix()
+    glScalef(1.6, 1.6, 1.6)
+    draw_rabbit(50, -80, 1, rabbit_colors[selected_color_index], 0)
+    glPopMatrix()
 
 def show_failed_overlay():
     begin_2d()
@@ -1264,6 +1288,76 @@ def show_failed_overlay():
     draw_text(350, 340, "Press R to restart", color=(1, 1, 0.7))
     end_2d()
 
+def set_static_menu_camera():
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(fovY, WINDOW_W / float(WINDOW_H), 1.0, 5000.0)
+
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
+    gluLookAt(
+        520, -760, 520,   # eye
+        0, 0, 80,         # target
+        0, 0, 1
+    )
+def draw_menu_island():
+
+    # Dirt blocks
+    for x in range(-2, 3):
+        for y in range(-2, 3):
+            draw_tile(x, y, (0.52, 0.38, 0.22), 2)
+
+    # Grass top
+    for x in range(-2, 3):
+        for y in range(-2, 3):
+            wx, wy = grid_to_world(x, y)
+
+            glColor3f(0.25, 0.78, 0.30)
+            glBegin(GL_QUADS)
+            glVertex3f(wx-44, wy-44, 33)
+            glVertex3f(wx+44, wy-44, 33)
+            glVertex3f(wx+44, wy+44, 33)
+            glVertex3f(wx-44, wy+44, 33)
+            glEnd()
+    for cloud in clouds:
+        cx, cy, cz = cloud["x"], cloud["y"], cloud["z"]
+
+        glPushMatrix()
+        glTranslatef(cx, cy, cz)
+
+        glColor3f(0.95, 0.95, 0.95)
+
+        # center
+        draw_cube_scaled(70, 45, 35)
+
+        # surrounding puffs
+        offsets = [
+            (40, 0, 10),
+            (-40, 0, 5),
+            (0, 30, 15),
+            (0, -30, 8),
+            (25, 20, 12),
+            (-25, -20, 10),
+        ]
+
+        for ox, oy, oz in offsets:
+            glPushMatrix()
+            glTranslatef(ox, oy, oz)
+            draw_cube_scaled(45, 30, 25)
+            glPopMatrix()
+
+        glPopMatrix()
+
+def update_clouds():
+    global cloud_time
+    cloud_time += 0.002  # speed of animation
+
+    amplitude = 20      # how high they move
+
+    for cloud in clouds:
+        t = cloud_time + cloud["phase"]
+        cloud["z"] = cloud["base_z"] + sin_approx(t) * amplitude
 
 def showScreen():
     global click_regions
@@ -1274,8 +1368,16 @@ def showScreen():
     glViewport(0, 0, WINDOW_W, WINDOW_H)
 
     if state == STATE_MENU:
-        set_perspective_camera()
-        draw_rabbit(0, 0, 0, rabbit_colors[saved_color_index], 0)
+        set_static_menu_camera()
+
+        draw_menu_island()
+
+        glPushMatrix()
+        glTranslatef(40, -20, 34)
+        glScalef(1.75, 1.75, 1.75)
+        draw_rabbit(0, 0, 1, rabbit_colors[saved_color_index], 0)
+        glPopMatrix()
+
         build_menu_ui()
     elif state == STATE_CUSTOMIZE:
         draw_customize_preview()
@@ -1297,7 +1399,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(WINDOW_W, WINDOW_H)
     glutInitWindowPosition(50, 50)
-    glutCreateWindow(b"Rabbit Coding Adventure")
+    glutCreateWindow(b"Project Group_2")
     glutDisplayFunc(showScreen)
     glutKeyboardFunc(keyboardListener)
     glutSpecialFunc(specialKeyListener)
