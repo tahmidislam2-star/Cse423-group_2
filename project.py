@@ -547,31 +547,22 @@ def build_levels():
             # cards
             18
         ),
-
         #l3
         make_level(
             [
                 (0,0), (1,0), (2,0), (3,0),
-                (0,1),                 (3,1),
-                (0,2), (1,2), (2,2), (3,2), (4,2),
-                (0,3),                         (4,3),
-                (0,4), (1,4), (2,4), (3,4), (4,4),
-                                (2,5),
-                                (2,6), (3,6), (4,6)
+        (0,1),                 (3,1),
+        (0,2), (1,2), (2,2), (3,2), (4,2),
+        (0,3),                         (4,3),
+        (0,4), (1,4), (2,4), (3,4), (4,4),
+                        (2,5),
+                        (2,6), (3,6), (4,6)
             ],
             (0,0),
             1,
-
-            # carrots
-            [(3,0), (4,2), (0,4), (4,4), (2,6)],
-
-            # portal
-            (4,6),
-
-            # spikes
-            [(3,1), (1,2), (4,3), (2,5)],
-
-            # cards
+            [(2,0), (4,2), (0,2), (4,4), (2,6)],  # carrots
+            (4,6),                                  # portal
+            [(3,1), (0,3), (1,4), (4,3)],          # traps — all avoidable
             30
         ),
     ]
@@ -758,7 +749,7 @@ def solve_level_cards(level_idx):
     queue = [((start[0], start[1], sdir, 0), [])]
     seen = {(start[0], start[1], sdir, 0)}
     head = 0
-    MAX_NODES = 200000   # ADD THIS — stop if search gets too large
+    MAX_NODES =800000   # ADD THIS — stop if search gets too large
 
     while head < len(queue):
         if head > MAX_NODES:          # ADD THIS
