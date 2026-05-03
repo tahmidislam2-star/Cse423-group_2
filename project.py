@@ -53,7 +53,7 @@ start_tile = (0, 0)
 start_dir = 1
 max_cards = 8
 level_center = (0.0, 0.0)
-
+portal_angle = 0
 rabbit_grid_x = 0
 rabbit_grid_y = 0
 rabbit_dir = 1
@@ -349,26 +349,64 @@ def draw_carrot(gx, gy):
 
 def draw_portal(gx, gy, active):
     wx, wy = grid_to_world(gx, gy)
-    z = get_tile_z(gx, gy) 
+    z = get_tile_z(gx, gy)
+
     glPushMatrix()
-    glTranslatef(wx, wy, 18)
-    col = (0.78, 0.22, 1.0) if active else (0.35, 0.24, 0.50)
-    glColor3f(col[0], col[1], col[2])
-    glBegin(GL_QUAD_STRIP)
-    segments = 28
-    for i in range(segments + 1):
-        ang = deg_to_rad((360.0 / segments) * i)
-        c = cos_approx(ang)
-        s = sin_approx(ang)
-        glVertex3f(c * 18, s * 18, 0)
-        glVertex3f(c * 28, s * 28, 0)
-    glEnd()
-    glColor3f(0.9, 0.85, 1.0 if active else 0.7)
-    glBegin(GL_LINE_LOOP)
-    for i in range(segments):
-        ang = deg_to_rad((360.0 / segments) * i)
-        glVertex3f(cos_approx(ang) * 23, sin_approx(ang) * 23, 0.5)
-    glEnd()
+    glTranslatef(wx, wy, z + 10)
+
+    quad = gluNewQuadric()
+
+    if active:
+        core_color = (0.2, 0.8, 1.0)
+        ring_color = (0.1, 0.4, 1.0)
+        beam_color = (0.3, 0.7, 1.0)
+    else:
+        core_color = (0.3, 0.3, 0.5)
+        ring_color = (0.2, 0.2, 0.4)
+        beam_color = (0.3, 0.3, 0.5)
+
+    #outer
+    glColor3f(*ring_color)
+    glPushMatrix()
+    glTranslatef(0, 0, 1)
+    gluCylinder(quad, 45, 45, 5, 20, 1)
+    glPopMatrix()
+
+    #core
+    glColor3f(*core_color)
+    gluSphere(quad, 20, 16, 16)
+
+    #glow
+    glColor3f(1, 1, 1)
+    gluSphere(quad, 8, 12, 12)
+
+    #rotators
+    glPushMatrix()
+    glRotatef(portal_angle, 0, 0, 1)
+
+    glColor3f(*core_color)
+    for i in range(4):
+        glPushMatrix()
+        glRotatef(i * 90, 0, 0, 1)
+        glTranslatef(30, 0, 0)
+        glutSolidCube(8)
+        glPopMatrix()
+
+    glPopMatrix()
+
+    #beams
+    if active:
+        for i in range(4):
+            glPushMatrix()
+            glRotatef(i * 90 + portal_angle * 0.5, 0, 0, 1)
+            glTranslatef(25, 0, 0)
+
+            glColor3f(*beam_color)
+            glRotatef(-90, 1, 0, 0)
+            gluCylinder(quad, 3, 0, 80, 10, 1)
+
+            glPopMatrix()
+
     glPopMatrix()
 
 
@@ -596,10 +634,77 @@ def build_levels():
             [(3,0),(3,2),(3,4)],
             (0,4),
             [(0,1)],
-            20,
+            15,
             fox=(0,2)
         ),
 
+        # l7
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0), (4,0),
+                (0,1),                       (4,1),
+                (0,2), (1,2), (2,2), (3,2), (4,2),
+                (0,3),                       (4,3),
+                (0,4), (1,4), (2,4), (3,4), (4,4), 
+                (-1,4),(-2,4),(-3,4),(-4,4)
+            ],
+            (0,0), 1,
+            [(2,0), (2,4), (0,2)],  # carrots 
+            (4,4),
+            [(1,2), (3,2)],  # traps
+            20,
+            fox=(-4,4)
+        ),
+
+        #l8
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0), (4,0),
+                (0,1), (-1, 2), (2,1), (4,1),
+                (0,2), (1,2), (2,2), (3,2), (4,2),
+                (0,3),  (-2,2), (2,3), (4,3), (-3,2),
+                (0,4), (1,4), (2,4), (3,4), (4,4)
+            ],
+            (0,0), 1,
+            [(4,0), (2,1), (4,2), (3,4)],  #carrots
+            (2,4),
+            [(1,2), (3,2), (2,3)],  #traps
+            20,
+            fox=(-3,2)
+        ),
+
+        #l9
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0),
+                (0,1), (-1,3), (2,1), (3,1),
+                (0,2), (1,2), (2,2), (-2, 3),
+                (0,3), (1,3), (2,3), (3,3)
+            ],
+            (0,0), 1,
+            [(3,0), (2,1), (1,2)],   #carrots
+            (2,3),  #portal
+            [(0,2), (3,3)], #traps
+            16,
+            fox=(-2,3)
+        ),
+
+        #l10
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0), (4,0),
+                (0,1),(2,2), (2,1), (4,3), (4,1),
+                (0,2), (1,2), (3,2), (4,2),
+                (1,3), (2,3), (3,3),
+                (0,4), (1,4), (2,4), (3,4), (4,4)
+            ],
+            (0,0), 1,
+            [(4,0), (2,0), (3,3), (1,4), (0,2)], #carrots
+            (4,4), #portal
+            [(3,2), (2,3)],  #trap
+            30,
+            fox=(2,2)
+        ),
     ]
 
 def recompute_level_center():
@@ -1067,7 +1172,7 @@ def build_game_ui():
 
     # ── HUD top-left ──────────────────────────────────────────────
     draw_rect(0, WINDOW_H - 120, 280, WINDOW_H, (0.10, 0.12, 0.18), True)
-    draw_text(16, WINDOW_H - 28,  "Level %d/5" % (current_level + 1),  color=(1, 1, 0.5))
+    draw_text(16, WINDOW_H - 28,  "Level %d/10" % (current_level + 1),  color=(1, 1, 0.5))
     draw_text(16, WINDOW_H - 52,  "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
     draw_text(16, WINDOW_H - 76,  level_message,  color=(0.82, 1, 0.82))
     draw_text(16, WINDOW_H - 100, "Cards: %d/%d" % (len(selected_cards), max_cards), color=(1, 1, 1))
@@ -1432,11 +1537,12 @@ def update_flash():
             flash_amount = 0.0
 
 def idle():
-    global cheat_message_timer, carrot_bob_time
+    global portal_angle, carrot_bob_time
     update_execution()
     update_flash()
     update_clouds()
-    carrot_bob_time += 0.04   # add this line
+    carrot_bob_time += 0.04
+    portal_angle += 1.2 
     glutPostRedisplay()
 
 def draw_level_scene():
