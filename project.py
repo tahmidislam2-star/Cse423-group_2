@@ -349,28 +349,118 @@ def draw_carrot(gx, gy):
 
 def draw_portal(gx, gy, active):
     wx, wy = grid_to_world(gx, gy)
-    z = get_tile_z(gx, gy) 
+    z = get_tile_z(gx, gy)
+
     glPushMatrix()
-    glTranslatef(wx, wy, 18)
-    col = (0.78, 0.22, 1.0) if active else (0.35, 0.24, 0.50)
-    glColor3f(col[0], col[1], col[2])
+    glTranslatef(wx, wy, z + 1)
+
+    # colors
+    if active:
+        inner  = (0.40, 0.85, 1.00)
+        mid    = (0.10, 0.50, 1.00)
+        outer  = (0.05, 0.20, 0.80)
+        beam   = (0.20, 0.60, 1.00)
+        glow   = (0.00, 0.70, 1.00)
+    else:
+        inner  = (0.30, 0.30, 0.55)
+        mid    = (0.18, 0.18, 0.42)
+        outer  = (0.10, 0.10, 0.30)
+        beam   = (0.20, 0.20, 0.45)
+        glow   = (0.15, 0.15, 0.40)
+
+    segments = 48
+
+    # ── OUTER GLOW RING (widest, darkest) ──
+    glColor3f(outer[0], outer[1], outer[2])
     glBegin(GL_QUAD_STRIP)
-    segments = 28
     for i in range(segments + 1):
-        ang = deg_to_rad((360.0 / segments) * i)
-        c = cos_approx(ang)
-        s = sin_approx(ang)
-        glVertex3f(c * 18, s * 18, 0)
-        glVertex3f(c * 28, s * 28, 0)
+        ang = deg_to_rad(360.0 / segments * i)
+        c, s = cos_approx(ang), sin_approx(ang)
+        glVertex3f(c * 36, s * 36, 0)
+        glVertex3f(c * 44, s * 44, 0)
     glEnd()
-    glColor3f(0.9, 0.85, 1.0 if active else 0.7)
+
+    # ── MID RING ──
+    glColor3f(mid[0], mid[1], mid[2])
+    glBegin(GL_QUAD_STRIP)
+    for i in range(segments + 1):
+        ang = deg_to_rad(360.0 / segments * i)
+        c, s = cos_approx(ang), sin_approx(ang)
+        glVertex3f(c * 22, s * 22, 0)
+        glVertex3f(c * 36, s * 36, 0)
+    glEnd()
+
+    # ── INNER BRIGHT RING ──
+    glColor3f(inner[0], inner[1], inner[2])
+    glBegin(GL_QUAD_STRIP)
+    for i in range(segments + 1):
+        ang = deg_to_rad(360.0 / segments * i)
+        c, s = cos_approx(ang), sin_approx(ang)
+        glVertex3f(c * 10, s * 10, 0)
+        glVertex3f(c * 22, s * 22, 0)
+    glEnd()
+
+    # ── BRIGHT CENTER DISC ──
+    glColor3f(glow[0], glow[1], glow[2])
+    glBegin(GL_TRIANGLE_FAN)
+    glVertex3f(0, 0, 0)
+    for i in range(segments + 1):
+        ang = deg_to_rad(360.0 / segments * i)
+        glVertex3f(cos_approx(ang) * 10, sin_approx(ang) * 10, 0)
+    glEnd()
+
+    # ── SPINNING DASHED RING (rotates with portal_angle) ──
+    glColor3f(inner[0], inner[1], inner[2])
+    glLineWidth(2)
+    glBegin(GL_LINES)
+    dash_count = 24
+    for i in range(dash_count):
+        ang1 = deg_to_rad((360.0 / dash_count * i) + portal_angle)
+        ang2 = deg_to_rad((360.0 / dash_count * i) + portal_angle + 6)
+        glVertex3f(cos_approx(ang1) * 30, sin_approx(ang1) * 30, 1)
+        glVertex3f(cos_approx(ang2) * 30, sin_approx(ang2) * 30, 1)
+    glEnd()
+
+    # ── COUNTER-SPINNING INNER DASHES ──
+    glColor3f(glow[0], glow[1], glow[2])
+    glBegin(GL_LINES)
+    for i in range(dash_count):
+        ang1 = deg_to_rad((360.0 / dash_count * i) - portal_angle * 1.5)
+        ang2 = deg_to_rad((360.0 / dash_count * i) - portal_angle * 1.5 + 8)
+        glVertex3f(cos_approx(ang1) * 18, sin_approx(ang1) * 18, 1)
+        glVertex3f(cos_approx(ang2) * 18, sin_approx(ang2) * 18, 1)
+    glEnd()
+    glLineWidth(1)
+
+    # ── LIGHT BEAMS shooting upward ──
+    if active:
+        beam_count = 8
+        for i in range(beam_count):
+            ang = deg_to_rad((360.0 / beam_count * i) + portal_angle * 0.5)
+            bx = cos_approx(ang) * 20
+            by = sin_approx(ang) * 20
+            # fade from bright base to transparent tip
+            glBegin(GL_TRIANGLES)
+            glColor3f(beam[0], beam[1], beam[2])
+            glVertex3f(bx - cos_approx(ang + deg_to_rad(90)) * 4,
+                       by - sin_approx(ang + deg_to_rad(90)) * 4, 0)
+            glVertex3f(bx + cos_approx(ang + deg_to_rad(90)) * 4,
+                       by + sin_approx(ang + deg_to_rad(90)) * 4, 0)
+            glColor3f(beam[0] * 0.2, beam[1] * 0.2, beam[2] * 0.2)
+            glVertex3f(bx * 0.4, by * 0.4, 120)   # beam tip height
+            glEnd()
+
+    # ── OUTER GLOW LINE ──
+    glColor3f(mid[0], mid[1], mid[2])
+    glLineWidth(2)
     glBegin(GL_LINE_LOOP)
     for i in range(segments):
-        ang = deg_to_rad((360.0 / segments) * i)
-        glVertex3f(cos_approx(ang) * 23, sin_approx(ang) * 23, 0.5)
+        ang = deg_to_rad(360.0 / segments * i)
+        glVertex3f(cos_approx(ang) * 44, sin_approx(ang) * 44, 0.5)
     glEnd()
-    glPopMatrix()
+    glLineWidth(1)
 
+    glPopMatrix()
 
 def draw_trap(gx, gy):
     wx, wy = grid_to_world(gx, gy)
