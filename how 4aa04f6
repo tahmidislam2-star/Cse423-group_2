@@ -1,0 +1,24 @@
+*   [33m8ffff09[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Added trees & better ui and fixed restart
+[31m|[m[32m\[m  
+[31m|[m * [33m4aa04f6[m 10 levels+portal
+* [32m|[m [33m5f1ad31[m Added trees & better ui and fixed restart
+* [32m|[m [33m2a49a3d[m Update project.py
+* [32m|[m [33maf6db97[m Update project.py
+[32m|[m[32m/[m  
+* [33m98e4d4d[m First 6 levels
+* [33m18e14b0[m Fox visual
+* [33m21f275c[m Fox visual update
+* [33m0724de5[m Foxxy
+*   [33mde1a3e6[m Merge branch 'main' of https://github.com/tahmidislam2-star/Cse423-group_2
+[33m|[m[34m\[m  
+[33m|[m * [33m7d20cf7[m carrot and level upgrade
+[33m|[m * [33m4854ee3[m Fix level 3 traps and improve solve cheat
+[33m|[m * [33mf763a34[m improved rabbit and carrot visuals
+* [34m|[m [33m483c885[m Update project.py
+[34m|[m[34m/[m  
+* [33m773a10f[m Main menu visual changes and some level changes
+* [33m36c5584[m Refactor level structure
+* [33mdc6c0c3[m improved rabbit and carrot visuals
+* [33mee13655[m improved rabbit and carrot visuals
+* [33mbcd39cd[m initial idea
+* [33m6ba9835[m Initial commit
