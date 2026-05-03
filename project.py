@@ -255,14 +255,23 @@ def draw_ground_plane():
 
 def draw_tile(gx, gy, color, height=1):
     wx, wy = grid_to_world(gx, gy)
-    
-    # Each cube is 16 units tall, stacked `height` times
+
     cube_h = 16
     total_h = cube_h * height
-    half = 44  # half of tile width (88/2)
+    half = 44
 
-    # --- TOP FACE ---
-    glColor3f(color[0], color[1], color[2])
+    visited = (gx, gy) in visited_tiles
+
+    if visited:
+        top_col = color  
+    else:
+        top_col = (0.30, 0.82, 0.32)
+
+    dirt_front = (0.46, 0.30, 0.16)
+    dirt_side  = (0.56, 0.38, 0.22)
+
+    #grass
+    glColor3f(*top_col)
     glBegin(GL_QUADS)
     glVertex3f(wx - half, wy - half, total_h)
     glVertex3f(wx + half, wy - half, total_h)
@@ -270,8 +279,8 @@ def draw_tile(gx, gy, color, height=1):
     glVertex3f(wx - half, wy + half, total_h)
     glEnd()
 
-    # --- LEFT FACE (front-left side, darker) ---
-    glColor3f(color[0] * 0.60, color[1] * 0.60, color[2] * 0.60)
+    #mud
+    glColor3f(*dirt_front)
     glBegin(GL_QUADS)
     glVertex3f(wx - half, wy - half, 0)
     glVertex3f(wx + half, wy - half, 0)
@@ -279,8 +288,7 @@ def draw_tile(gx, gy, color, height=1):
     glVertex3f(wx - half, wy - half, total_h)
     glEnd()
 
-    # --- RIGHT FACE (front-right side, medium shade) ---
-    glColor3f(color[0] * 0.75, color[1] * 0.75, color[2] * 0.75)
+    glColor3f(*dirt_side)
     glBegin(GL_QUADS)
     glVertex3f(wx + half, wy - half, 0)
     glVertex3f(wx + half, wy + half, 0)
@@ -288,8 +296,9 @@ def draw_tile(gx, gy, color, height=1):
     glVertex3f(wx + half, wy - half, total_h)
     glEnd()
 
-    # --- TOP FACE OUTLINE ---
+    #outline
     glColor3f(0.08, 0.08, 0.08)
+
     glBegin(GL_LINE_LOOP)
     glVertex3f(wx - half, wy - half, total_h + 0.5)
     glVertex3f(wx + half, wy - half, total_h + 0.5)
@@ -297,25 +306,15 @@ def draw_tile(gx, gy, color, height=1):
     glVertex3f(wx - half, wy + half, total_h + 0.5)
     glEnd()
 
-    # --- VERTICAL EDGE OUTLINES (corners of the cube) ---
-    glColor3f(0.08, 0.08, 0.08)
-    glLineWidth(1)
     glBegin(GL_LINES)
-    # Front-left vertical edge
     glVertex3f(wx - half, wy - half, 0)
     glVertex3f(wx - half, wy - half, total_h)
-    # Front-right vertical edge
+
     glVertex3f(wx + half, wy - half, 0)
     glVertex3f(wx + half, wy - half, total_h)
-    # Back-right vertical edge
+
     glVertex3f(wx + half, wy + half, 0)
     glVertex3f(wx + half, wy + half, total_h)
-    # Bottom edge of left face
-    glVertex3f(wx - half, wy - half, 0)
-    glVertex3f(wx + half, wy - half, 0)
-    # Bottom edge of right face
-    glVertex3f(wx + half, wy - half, 0)
-    glVertex3f(wx + half, wy + half, 0)
     glEnd()
 
 def get_tile_z(gx, gy):
@@ -418,26 +417,21 @@ def draw_trap(gx, gy):
 
     q = gluNewQuadric()
 
-    # 3 pointy spikes arranged in a triangle
+    #spikes
     spike_positions = [
-        ( 0,   12),   # front
-        (-11,  -7),   # back-left
-        ( 11,  -7),   # back-right
+        ( 0,   12),
+        (-11,  -7),
+        ( 11,  -7),   
     ]
 
     for sx, sy in spike_positions:
         glPushMatrix()
         glTranslatef(sx, sy, 0)
 
-        # Dark red base ring
         glColor3f(0.65, 0.10, 0.10)
         gluDisk(q, 0, 5, 10, 1)
-
-        # Bright red sharp spike pointing straight up
         glColor3f(0.92, 0.15, 0.15)
         gluCylinder(q, 5, 0, 36, 10, 1)
-
-        # Shiny tip highlight — tiny bright cone on top
         glTranslatef(0, 0, 28)
         glColor3f(1.0, 0.55, 0.55)
         gluCylinder(q, 1.5, 0, 10, 6, 1)
@@ -453,7 +447,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     glTranslatef(world_x, world_y, hop)
     glRotatef(angle, 0, 0, 1)
 
-    # --- BODY — big white box ---
+    #body
     glColor3f(color[0], color[1], color[2])
     glPushMatrix()
     glTranslatef(0, 0, 18)
@@ -461,7 +455,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     draw_box_outline(42, 30, 36)
     glPopMatrix()
 
-    # --- HEAD — white box ---
+    #head
     glColor3f(color[0], color[1], color[2])
     glPushMatrix()
     glTranslatef(0, 16, 46)
@@ -469,7 +463,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     draw_box_outline(36, 30, 30)
     glPopMatrix()
 
-    # --- EARS — tall white ---
+    #ear
     for ex in (-10, 10):
         glColor3f(color[0], color[1], color[2])
         glPushMatrix()
@@ -478,14 +472,14 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
         draw_box_outline(10, 8, 32)
         glPopMatrix()
 
-        # Pink inside ear
+        #pinkish
         glColor3f(1.0, 0.55, 0.75)
         glPushMatrix()
         glTranslatef(ex, 21, 72)
         draw_cube_scaled(5, 4, 24)
         glPopMatrix()
 
-    # --- EYES — dark navy blue circles (boxes) ---
+    #eyes
     glColor3f(0.10, 0.20, 0.55)
     for ex in (-10, 10):
         glPushMatrix()
@@ -493,23 +487,23 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
         draw_cube_scaled(9, 5, 9)
         glPopMatrix()
 
-    # --- NOSE — pink triangle box ---
+    #nose
     glColor3f(0.95, 0.40, 0.60)
     glPushMatrix()
     glTranslatef(0, 30, 40)
     draw_cube_scaled(7, 4, 5)
     glPopMatrix()
 
-    # --- WHISKERS — dark lines left and right ---
+    #whisker
     glColor3f(0.05, 0.05, 0.05)
     glLineWidth(2)
     glBegin(GL_LINES)
-    # left whiskers
+
     glVertex3f(-18, 29, 41)
     glVertex3f(-4,  29, 41)
     glVertex3f(-18, 29, 38)
     glVertex3f(-4,  29, 38)
-    # right whiskers
+
     glVertex3f(4,  29, 41)
     glVertex3f(18, 29, 41)
     glVertex3f(4,  29, 38)
@@ -517,7 +511,7 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     glEnd()
     glLineWidth(1)
 
-    # --- LEGS — teal/blue boxes at bottom ---
+    #legs
     glColor3f(0.25, 0.65, 0.80)
     for lx in (-11, 11):
         glPushMatrix()
@@ -533,35 +527,35 @@ def draw_tree(wx, wy, base_z):
     glPushMatrix()
     glTranslatef(wx, wy, base_z)
 
-    # Bottom base block (yellow-green, large)
+    #bottom
     glColor3f(0.55, 0.78, 0.22)
     glPushMatrix()
     glTranslatef(0, 0, 8)
     draw_cube_scaled(44, 44, 16)
     glPopMatrix()
 
-    # Middle block (teal/blue, slightly smaller)
+    #root
     glColor3f(0.20, 0.62, 0.72)
     glPushMatrix()
     glTranslatef(0, 0, 24)
     draw_cube_scaled(36, 36, 16)
     glPopMatrix()
 
-    # Trunk (thin, dark)
+    #trunk
     glColor3f(0.30, 0.18, 0.08)
     glPushMatrix()
     glTranslatef(0, 0, 44)
     draw_cube_scaled(10, 10, 75)
     glPopMatrix()
 
-    # Top foliage block (big bright green square)
+    # leaf
     glColor3f(0.22, 0.75, 0.30)
     glPushMatrix()
     glTranslatef(0, 0, 105)
     draw_cube_scaled(46, 46, 36)
     glPopMatrix()
 
-    # Smaller top cap (darker green)
+    #top
     glColor3f(0.15, 0.58, 0.22)
     glPushMatrix()
     glTranslatef(0, 0, 130)
@@ -582,7 +576,7 @@ def draw_rock(wx, wy, base_z):
     glutSolidCube(30)
     glPopMatrix()
 
-    # top chunk
+    #top
     glColor3f(0.7, 0.7, 0.72)
     glPushMatrix()
     glTranslatef(4, -2, 20)
@@ -590,7 +584,7 @@ def draw_rock(wx, wy, base_z):
     glutSolidCube(22)
     glPopMatrix()
 
-    # side chunk
+    #side
     glColor3f(0.4, 0.4, 0.42)
     glPushMatrix()
     glTranslatef(-16, 10, 5)
@@ -611,7 +605,7 @@ def draw_flower(wx, wy, base_z, color=(1.0, 0.3, 0.6)):
     glutSolidCube(20)
     glPopMatrix()
 
-    # petals
+    # petal
     glColor3f(*color)
     for px, py in [(10,0),(-10,0),(0,10),(0,-10)]:
         glPushMatrix()
@@ -683,7 +677,7 @@ def draw_pine_tree(wx, wy, base_z):
     glutSolidCube(20)
     glPopMatrix()
 
-    # layered leaves
+    #leaves
     heights = [30, 46, 60, 72]
     sizes = [50, 38, 26, 14]
 
@@ -703,7 +697,7 @@ def draw_cactus(wx, wy, base_z):
 
     glColor3f(0.22, 0.62, 0.22)
 
-    # main body
+    #body
     glPushMatrix()
     glScalef(0.5, 0.5, 2.0)
     glutSolidCube(20)
@@ -832,11 +826,7 @@ def build_levels():
         #l3
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1),                 (3,1),
-                (0,2), (1,2), (2,2), (3,2),
-                (0,3),                 (3,3),
-                (0,4), (1,4), (2,4), (3,4)
+                (0,0), (1,0), (2,0), (3,0),(0,1),(3,1),(0,2), (1,2), (2,2), (3,2),(0,3),(3,3),(0,4), (1,4), (2,4), (3,4)
             ],
             (0,0), 1,
             [(2,0), (3,0), (3,2), (1,4), (3,4)],  #carrots
@@ -852,10 +842,7 @@ def build_levels():
        # l4
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1),        (2,1), (3,1),
-                (0,2), (1,2), (2,2),
-                (0,3), (1,3), (2,3), (3,3)
+                (0,0), (1,0), (2,0), (3,0),(0,1),(2,1), (3,1),(0,2), (1,2), (2,2),(0,3), (1,3), (2,3), (3,3)
             ],
             (0,0), 1,
             [(3,0), (2,1), (1,2)],   #carrots
@@ -871,11 +858,7 @@ def build_levels():
         #l5
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1),        (2,1),
-                (0,2), (1,2), (2,2), (3,2),
-                              (2,3), (3,3),
-                (0,4), (1,4), (2,4), (3,4)
+                (0,0), (1,0), (2,0), (3,0),(0,1),(2,1),(0,2), (1,2), (2,2), (3,2),(2,3), (3,3),(0,4), (1,4), (2,4), (3,4)
             ],
             (0,0), 1,
             [(3,0), (2,1), (3,2), (1,4), (3,4)],  #carrots
@@ -891,10 +874,7 @@ def build_levels():
         #l6
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1),        (3,1),(0,2),
-                (3,3), (1,2), (2,2), (3,2),
-                (0,4), (1,4), (2,4), (3,4)
+                (0,0), (1,0), (2,0), (3,0),(0,1),(3,1),(0,2),(3,3), (1,2), (2,2), (3,2),(0,4), (1,4), (2,4), (3,4)
             ],
             (0,0), 1,
             [(3,0),(3,2),(3,4)],
@@ -910,12 +890,7 @@ def build_levels():
         #l7
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0), (4,0),
-                (0,1),                       (4,1),
-                (0,2), (1,2), (2,2), (3,2), (4,2),
-                (0,3),                       (4,3),
-                (0,4), (1,4), (2,4), (3,4), (4,4), 
-                (-1,4),(-2,4),(-3,4),(-4,4)
+                (0,0), (1,0), (2,0), (3,0), (4,0),(0,1),(4,1),(0,2), (1,2), (2,2), (3,2), (4,2),(0,3),(4,3),(0,4), (1,4), (2,4), (3,4), (4,4),(-1,4),(-2,4),(-3,4),(-4,4)
             ],
             (0,0), 1,
             [(2,0), (2,4), (0,2)],  # carrots 
@@ -933,11 +908,7 @@ def build_levels():
         #l8
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0), (4,0),
-                (0,1), (-1, 2), (2,1), (4,1),
-                (0,2), (1,2), (2,2), (3,2), (4,2),
-                (0,3),  (-2,2), (2,3), (4,3), (-3,2),
-                (0,4), (1,4), (2,4), (3,4), (4,4)
+                (0,0), (1,0), (2,0), (3,0), (4,0),(0,1), (-1, 2), (2,1), (4,1),(0,2), (1,2), (2,2), (3,2), (4,2),(0,3),  (-2,2), (2,3), (4,3), (-3,2), (0,4), (1,4), (2,4), (3,4), (4,4)
             ],
             (0,0), 1,
             [(4,0), (2,1), (4,2), (3,4)],  #carrots
@@ -954,10 +925,7 @@ def build_levels():
         #l9
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1), (-1,3), (2,1), (3,1),
-                (0,2), (1,2), (2,2), (-2, 3),
-                (0,3), (1,3), (2,3), (3,3)
+                (0,0), (1,0), (2,0), (3,0),(0,1), (-1,3), (2,1), (3,1),(0,2), (1,2), (2,2), (-2, 3),(0,3), (1,3), (2,3), (3,3)
             ],
             (0,0), 1,
             [(3,0), (2,1), (1,2)],   #carrots
@@ -974,11 +942,7 @@ def build_levels():
         #l10
         make_level(
             [
-                (0,0), (1,0), (2,0), (3,0), (4,0),
-                (0,1),(2,2), (2,1), (4,3), (4,1),
-                (0,2), (1,2), (3,2), (4,2),
-                (1,3), (2,3), (3,3),
-                (0,4), (1,4), (2,4), (3,4), (4,4)
+                (0,0), (1,0), (2,0), (3,0), (4,0),(0,1),(2,2), (2,1), (4,3), (4,1), (0,2), (1,2), (3,2), (4,2),(1,3), (2,3), (3,3),(0,4), (1,4), (2,4), (3,4), (4,4)
             ],
             (0,0), 1,
             [(4,0), (2,0), (3,3), (1,4), (0,2)], #carrots
@@ -1013,10 +977,10 @@ def recompute_level_center():
 
     size = max(max_x - min_x + 1, max_y - min_y + 1)
     camera_radius = 500 + size * 90
-    if current_level >= 6:  # levels 7-10 (0-indexed)
-        camera_radius = 400 + size * 60  # closer camera
+    if current_level >= 6:  # levels 7-10
+        camera_radius = 400 + size * 60 
     else:
-        camera_radius = 500 + size * 90  # normal camera
+        camera_radius = 500 + size * 90
 
 def current_level_data():
     return levels[current_level]
@@ -1163,7 +1127,6 @@ def draw_fox(world_x, world_y, direction, hop=0):
 
 def fox_can_see_rabbit():
     global fox_grid_x, fox_grid_y, rabbit_grid_x, rabbit_grid_y
-    # Facing EAST
     if rabbit_grid_y != fox_grid_y:
         return False
     if rabbit_grid_x <= fox_grid_x:
@@ -1176,22 +1139,16 @@ def fox_can_see_rabbit():
 
 def move_fox():
     global fox_grid_x, fox_grid_y, fox_dir, state, level_message
-
     if not fox_present:
         return
-
     best = None
     best_dist = 999999
-
     for i, (dx, dy) in enumerate(DIRS):
         nx = fox_grid_x + dx
         ny = fox_grid_y + dy
-
         if (nx, ny) not in walkable_tiles:
             continue
-
         dist = abs(nx - rabbit_grid_x) + abs(ny - rabbit_grid_y)
-
         if dist < best_dist:
             best_dist = dist
             best = (nx, ny, i)
@@ -1214,7 +1171,6 @@ def all_carrots_collected():
 def portal_active():
     return all_carrots_collected()
 
-
 def collect_carrot_if_here():
     global level_message
     pos = (rabbit_grid_x, rabbit_grid_y)
@@ -1223,7 +1179,6 @@ def collect_carrot_if_here():
             collected.add(c)
             level_message = "Carrot collected"
             return
-
 
 def check_trap_or_finish():
     global state, level_message
@@ -1461,7 +1416,7 @@ def draw_rotate_icon(cx, cy, clockwise=True):
 def build_game_ui():
     begin_2d()
 
-    # ── HUD top-left ──────────────────────────────────────────────
+    # top_left
     draw_rect(0, WINDOW_H - 115, 370, WINDOW_H, (0.10, 0.12, 0.18), True)
     draw_text(16, WINDOW_H - 28,  "Level %d/10" % (current_level + 1), color=(1, 1, 0.5))
     draw_text(16, WINDOW_H - 52,  "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
@@ -1475,7 +1430,7 @@ def build_game_ui():
     elif state == STATE_WIN:
         draw_text(320, WINDOW_H - 60, "YOU FINISHED ALL LEVELS!", GLUT_BITMAP_TIMES_ROMAN_24, (0.65, 1, 0.5))
 
-    # ── CARD STRIP background (green pill) ───────────────────────
+    #green bottom
     strip_x1 = 30
     strip_x2 = WINDOW_W - 100
     strip_y1 = 14
@@ -1484,7 +1439,6 @@ def build_game_ui():
     strip_cy = (strip_y1 + strip_y2) / 2
     r = (strip_y2 - strip_y1) / 2   # 34
 
-    # pill shape: rect + two semicircles
     glColor3f(0.20, 0.72, 0.25)
     glBegin(GL_QUADS)
     glVertex2f(strip_x1 + r, strip_y1)
@@ -1495,7 +1449,7 @@ def build_game_ui():
     draw_circle_2d(strip_x1 + r, strip_cy, r, (0.20, 0.72, 0.25))
     draw_circle_2d(strip_x2 - r, strip_cy, r, (0.20, 0.72, 0.25))
 
-    # ── CARD SLOTS inside the strip ───────────────────────────────
+    #cards
     slot_colors = {
         CARD_FORWARD: (0.10, 0.55, 0.20),
         CARD_LEFT:    (0.10, 0.55, 0.20),
@@ -1503,7 +1457,7 @@ def build_game_ui():
         CARD_WAIT:    (0.10, 0.55, 0.20),
     }
     slot_w = 52
-    slot_gap = 14      # gap between slots (for the separator arrows)
+    slot_gap = 14 
     slot_start = strip_x1 + r + 8
     num_visible = min(MAX_VISIBLE_CARDS, max_cards)
 
@@ -1521,7 +1475,6 @@ def build_game_ui():
             col = (0.12, 0.48, 0.18)
             draw_rect(sx, sy1, sx + slot_w, sy2, col, True)
 
-            # draw icon
             if card == CARD_FORWARD:
                 draw_arrow_icon(scx, scy, 10)
             elif card == CARD_LEFT:
@@ -1531,7 +1484,6 @@ def build_game_ui():
             else:
                 draw_text(sx + 8, scy - 6, "W", color=(1, 1, 1))
 
-            # highlight executing card
             if executing_cards and actual_index == current_card_step:
                 draw_rect(sx - 2, sy1 - 2, sx + slot_w + 2, sy2 + 2, (1, 1, 0.2), False)
 
@@ -1539,21 +1491,18 @@ def build_game_ui():
         else:
             draw_rect(sx, sy1, sx + slot_w, sy2, (0.12, 0.52, 0.18), True)
             draw_rect(sx, sy1, sx + slot_w, sy2, (0.08, 0.38, 0.12), False)
-        # separator arrow between slots
+
         if i < num_visible - 1:
             ax = sx + slot_w + slot_gap / 2
             draw_arrow_icon(ax, scy, 6)
 
-    # ── ORANGE PLAY BUTTON (big circle, right of strip) ──────────
+    #play
     play_cx = WINDOW_W - 52
     play_cy = strip_cy
     play_r  = 34
 
-    # shadow/dark ring
     draw_circle_2d(play_cx, play_cy, play_r + 3, (0.55, 0.28, 0.00))
-    # main orange circle
     draw_circle_2d(play_cx, play_cy, play_r, (0.95, 0.52, 0.05))
-    # play triangle inside
     glColor3f(1, 1, 1)
     glBegin(GL_TRIANGLES)
     glVertex2f(play_cx - 10, play_cy - 16)
@@ -1563,14 +1512,12 @@ def build_game_ui():
     register_click(CARD_PLAY, (play_cx - play_r, play_cy - play_r,
                                play_cx + play_r, play_cy + play_r))
 
-    # ── TOOL CARDS (bottom-left, below strip) ────────────────────
     tool_colors = {
         CARD_FORWARD: (0.20, 0.72, 0.25),
         CARD_LEFT:    (0.20, 0.72, 0.25),
         CARD_RIGHT:   (0.20, 0.72, 0.25),
         CARD_WAIT:    (0.55, 0.30, 0.80),
     }
-    # Only show FWD and LEFT/RIGHT as two tool buttons (like doodle)
     TOOL_DISPLAY = [
         (CARD_FORWARD, "FWD"),
         (CARD_LEFT,    "LFT"),
@@ -1581,7 +1528,7 @@ def build_game_ui():
     tool_btn_h  = 52
     tool_gap    = 12
     tool_total  = len(TOOL_DISPLAY) * tool_btn_w + (len(TOOL_DISPLAY) - 1) * tool_gap
-    tool_start_x = (WINDOW_W - tool_total) // 2   # centered horizontally
+    tool_start_x = (WINDOW_W - tool_total) // 2
     tool_y1 = strip_y2 + 10
     tool_y2 = tool_y1 + tool_btn_h
 
@@ -2059,11 +2006,64 @@ def update_clouds():
         t = cloud_time + cloud["phase"]
         cloud["z"] = cloud["base_z"] + sin_approx(t) * amplitude
 
+def draw_gradient_background():
+    if state in (STATE_MENU, STATE_CUSTOMIZE):
+        glClearColor(0.38, 0.88, 0.84, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        return
+
+    lvl = current_level + 1
+
+
+    if lvl <= 3:
+        # bright sky
+        top = (0.96, 0.97, 1.00)
+        bottom = (0.08, 0.9, 1)
+
+    elif lvl <= 6:
+        # sunset
+        top = (1.00, 0.72, 0.42)
+        bottom = (0.42, 0.12, 0.28)
+
+    else:
+        # night
+        top = (0.10, 0.12, 0.25)
+        bottom = (0.01, 0.02, 0.08)
+
+    glClear(GL_DEPTH_BUFFER_BIT)
+    glDisable(GL_DEPTH_TEST)
+
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    gluOrtho2D(0, WINDOW_W, 0, WINDOW_H)
+
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+
+    glBegin(GL_QUADS)
+    glColor3f(*bottom)
+    glVertex2f(0, 0)
+    glVertex2f(WINDOW_W, 0)
+
+    glColor3f(*top)
+    glVertex2f(WINDOW_W, WINDOW_H)
+    glVertex2f(0, WINDOW_H)
+    glEnd()
+
+    glPopMatrix()
+
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+
+    glEnable(GL_DEPTH_TEST)
+
 def showScreen():
     global click_regions
     click_regions = []
-    glClearColor(0.38, 0.88, 0.84, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    draw_gradient_background()
     glEnable(GL_DEPTH_TEST)
     glViewport(0, 0, WINDOW_W, WINDOW_H)
 
