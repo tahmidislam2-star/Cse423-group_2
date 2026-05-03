@@ -528,9 +528,258 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
 
     glPopMatrix()
 
+#decors
+def draw_tree(wx, wy, base_z):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # Bottom base block (yellow-green, large)
+    glColor3f(0.55, 0.78, 0.22)
+    glPushMatrix()
+    glTranslatef(0, 0, 8)
+    draw_cube_scaled(44, 44, 16)
+    glPopMatrix()
+
+    # Middle block (teal/blue, slightly smaller)
+    glColor3f(0.20, 0.62, 0.72)
+    glPushMatrix()
+    glTranslatef(0, 0, 24)
+    draw_cube_scaled(36, 36, 16)
+    glPopMatrix()
+
+    # Trunk (thin, dark)
+    glColor3f(0.30, 0.18, 0.08)
+    glPushMatrix()
+    glTranslatef(0, 0, 44)
+    draw_cube_scaled(10, 10, 75)
+    glPopMatrix()
+
+    # Top foliage block (big bright green square)
+    glColor3f(0.22, 0.75, 0.30)
+    glPushMatrix()
+    glTranslatef(0, 0, 105)
+    draw_cube_scaled(46, 46, 36)
+    glPopMatrix()
+
+    # Smaller top cap (darker green)
+    glColor3f(0.15, 0.58, 0.22)
+    glPushMatrix()
+    glTranslatef(0, 0, 130)
+    draw_cube_scaled(30, 30, 22)
+    glPopMatrix()
+
+    glPopMatrix()
+
+def draw_rock(wx, wy, base_z):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # base
+    glColor3f(0.55, 0.55, 0.58)
+    glPushMatrix()
+    glTranslatef(0, 0, 8)
+    glScalef(1.5, 1.2, 0.6)
+    glutSolidCube(30)
+    glPopMatrix()
+
+    # top chunk
+    glColor3f(0.7, 0.7, 0.72)
+    glPushMatrix()
+    glTranslatef(4, -2, 20)
+    glScalef(1.0, 0.8, 0.5)
+    glutSolidCube(22)
+    glPopMatrix()
+
+    # side chunk
+    glColor3f(0.4, 0.4, 0.42)
+    glPushMatrix()
+    glTranslatef(-16, 10, 5)
+    glScalef(0.7, 0.6, 0.5)
+    glutSolidCube(20)
+    glPopMatrix()
+
+    glPopMatrix()
+
+def draw_flower(wx, wy, base_z, color=(1.0, 0.3, 0.6)):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # stem
+    glColor3f(0.2, 0.72, 0.2)
+    glPushMatrix()
+    glScalef(0.2, 0.2, 1.5)
+    glutSolidCube(20)
+    glPopMatrix()
+
+    # petals
+    glColor3f(*color)
+    for px, py in [(10,0),(-10,0),(0,10),(0,-10)]:
+        glPushMatrix()
+        glTranslatef(px, py, 28)
+        glScalef(0.5, 0.5, 0.4)
+        glutSolidCube(20)
+        glPopMatrix()
+
+    # center
+    glColor3f(1.0, 0.92, 0.1)
+    glPushMatrix()
+    glTranslatef(0, 0, 30)
+    glutSolidCube(12)
+    glPopMatrix()
+
+    glPopMatrix()
+
+def draw_mushroom(wx, wy, base_z):
+    q = gluNewQuadric()
+
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+
+    glColor3f(0.92, 0.88, 0.82)
+    glPushMatrix()
+    gluCylinder(q, 7, 7, 24, 12, 4)
+    glPopMatrix()
+
+    glColor3f(0.88, 0.15, 0.10)
+    glPushMatrix()
+    glTranslatef(0, 0, 24)
+    glScalef(1.4, 1.4, 0.6)
+    glutSolidSphere(14, 16, 16)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(0, 0, 34)
+    glScalef(1.1, 1.1, 0.7)
+    glutSolidSphere(10, 16, 16)
+    glPopMatrix()
+
+    glColor3f(1, 1, 1)
+
+    spots = [
+        (0, 0, 42),
+        (-10, 5, 37),
+        (9, -4, 36),
+        (-6, -10, 35),
+        (8, 10, 35),
+    ]
+
+    for sx, sy, sz in spots:
+        glPushMatrix()
+        glTranslatef(sx, sy, sz)
+        glutSolidSphere(2.3, 10, 10)
+        glPopMatrix()
+
+    glPopMatrix()
+
+def draw_pine_tree(wx, wy, base_z):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # trunk
+    glColor3f(0.35, 0.2, 0.08)
+    glPushMatrix()
+    glScalef(0.3, 0.3, 1.5)
+    glutSolidCube(20)
+    glPopMatrix()
+
+    # layered leaves
+    heights = [30, 46, 60, 72]
+    sizes = [50, 38, 26, 14]
+
+    for h, s in zip(heights, sizes):
+        glColor3f(0.2, 0.6, 0.25)
+        glPushMatrix()
+        glTranslatef(0, 0, h)
+        glScalef(s/20, s/20, 0.6)
+        glutSolidCube(20)
+        glPopMatrix()
+
+    glPopMatrix()
+
+def draw_cactus(wx, wy, base_z):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    glColor3f(0.22, 0.62, 0.22)
+
+    # main body
+    glPushMatrix()
+    glScalef(0.5, 0.5, 2.0)
+    glutSolidCube(20)
+    glPopMatrix()
+
+    # arms
+    for x, z in [(-10, 30), (10, 22)]:
+        glPushMatrix()
+        glTranslatef(x, 0, z)
+        glScalef(1.2, 0.4, 0.4)
+        glutSolidCube(20)
+        glPopMatrix()
+
+    glPopMatrix()
+
+def draw_lantern(wx, wy, base_z):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # base
+    glColor3f(0.6, 0.58, 0.55)
+    glutSolidCube(20)
+
+    # pole
+    glPushMatrix()
+    glTranslatef(0, 0, 20)
+    glScalef(0.3, 0.3, 1.5)
+    glutSolidCube(20)
+    glPopMatrix()
+
+    # light
+    glColor3f(1.0, 0.85, 0.3)
+    glPushMatrix()
+    glTranslatef(0, 0, 50)
+    gluSphere(gluNewQuadric(), 12, 10, 10)
+    glPopMatrix()
+
+    glPopMatrix()
+
+def draw_barrel(wx, wy, base_z):
+    q = gluNewQuadric()
+
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # body
+    glColor3f(0.55, 0.32, 0.10)
+    gluCylinder(q, 16, 16, 30, 10, 4)
+
+    # top
+    glColor3f(0.45, 0.26, 0.08)
+    gluDisk(q, 0, 16, 10, 1)
+
+    glPopMatrix()
+
+DECORATION_DRAWERS = {
+    "tree":     lambda wx, wy, z: draw_tree(wx, wy, z),
+    "pine":     lambda wx, wy, z: draw_pine_tree(wx, wy, z),
+    "rock":     lambda wx, wy, z: draw_rock(wx, wy, z),
+    "flower":   lambda wx, wy, z: draw_flower(wx, wy, z),
+    "mushroom": lambda wx, wy, z: draw_mushroom(wx, wy, z),
+    "cactus":   lambda wx, wy, z: draw_cactus(wx, wy, z),
+    "lantern":  lambda wx, wy, z: draw_lantern(wx, wy, z),
+    "barrel":   lambda wx, wy, z: draw_barrel(wx, wy, z),
+}
+
+def draw_decorations():
+    for gx, gy, kind in current_level_data().get("decorations", []):
+        wx, wy = grid_to_world(gx, gy)
+        drawer = DECORATION_DRAWERS.get(kind)
+        if drawer:
+            drawer(wx, wy, 0)
+
 
 def make_level(tiles, start, start_facing, carrots_list, portal, trap_list,
-               max_cards_level, heights=None, fox=None):
+               max_cards_level, heights=None, fox=None, decorations=None):
     return {
         "tiles": set(tiles),
         "start": start,
@@ -540,7 +789,8 @@ def make_level(tiles, start, start_facing, carrots_list, portal, trap_list,
         "traps": set(trap_list),
         "max_cards": max_cards_level,
         "heights": heights or {},
-        "fox": fox
+        "fox": fox,
+        "decorations": decorations or [],
     }
 
 
@@ -551,16 +801,16 @@ def build_levels():
 
         #l1
         make_level(
-            [
-                (0,0), (1,0), (2,0),
-                (0,1), (2,1),
-                (0,2), (1,2), (2,2)
-            ],
+            [(0,0),(1,0),(2,0),(0,1),(2,1),(0,2),(1,2),(2,2)],
             (0,0), 1,
-            [(1,0), (2,0), (2,1), (2,2)],  #carrots
-            (1,2),  #portal
-            [],
-            10
+            [(1,0),(2,0),(2,2)],#carrots
+            (1,2), #portal
+            [], 
+            10,
+            decorations=[
+                (-1,-1,"tree"), (-1,4,"rock"),
+                (3,3,"flower"), (1,-2,"mushroom"),
+            ]
         ),
 
         #l2
@@ -572,7 +822,11 @@ def build_levels():
             [(2,0), (2,2), (1,2)],  #carrots
             (2,3),  #portal
             [],
-            13
+            13,
+            decorations=[
+                (-1,-1,"pine"), (-1,1,"barrel"),
+                (-1,4,"sign"), (3,4,"rock"), (0,4,"flower"),
+            ]
         ),
 
         #l3
@@ -588,10 +842,14 @@ def build_levels():
             [(2,0), (3,0), (3,2), (1,4), (3,4)],  #carrots
             (0,4),  #portal
             [],
-            16
+            16,
+            decorations=[
+                (-1,-1,"lantern"),(4,-1,"lantern"),(-1,5,"lantern"),(4,5,"lantern"),
+                (1,1,"mushroom"),(2,1,"mushroom"),(1,3,"flower"),(2,3,"flower"),
+            ]
         ),
 
-        #l4
+       # l4
         make_level(
             [
                 (0,0), (1,0), (2,0), (3,0),
@@ -603,7 +861,11 @@ def build_levels():
             [(3,0), (2,1), (1,2)],   #carrots
             (2,3),  #portal
             [(0,2), (3,3)], #traps
-            16
+            16,
+                        decorations=[(-1,-1,"tree"),
+                (4,-1,"rock"),(-1,4,"rock"),
+                (1,1,"barrel"),(3,2,"rock"),
+            ]
         ),
         
         #l5
@@ -619,7 +881,11 @@ def build_levels():
             [(3,0), (2,1), (3,2), (1,4), (3,4)],  #carrots
             (0,4),    #portal
             [(1,2), (0,1)],   #traps
-            20
+            20,
+            decorations=[
+                (-1,-1,"cactus"),(4,-1,"cactus"),(-1,2,"cactus"),
+                (4,2,"rock"),(-1,5,"cactus"),(4,5,"cactus"),(1,5,"rock"),
+            ]
         ),
 
         #l6
@@ -635,9 +901,13 @@ def build_levels():
             (0,4),
             [(0,1)],
             20,
-            fox=(0,2)
+            fox=(0,2),
+            decorations=[
+                (-1,-1,"pine"),(-1,5,"pine"),(4,5,"pine"),(2,-1,"mushroom"),(1,3,"rock"),
+            ]
         ),
-        # l7
+
+        #l7
         make_level(
             [
                 (0,0), (1,0), (2,0), (3,0), (4,0),
@@ -652,7 +922,12 @@ def build_levels():
             (4,4),
             [(1,2), (3,2)],  # traps
             20,
-            fox=(-4,4)
+            fox=(-4,4),
+            decorations=[
+                (-1,-1,"tree"),(-1,1,"barrel"),(5,1,"barrel"),
+                (5,3,"rock"),(-5,5,"pine"),(5,5,"pine"),
+                (2,-1,"flower"),(2,5,"mushroom"),
+            ]
         ),
 
         #l8
@@ -669,7 +944,11 @@ def build_levels():
             (2,4),
             [(1,2), (3,2), (2,3)],  #traps
             20,
-            fox=(-3,2)
+            fox=(-3,2),
+            decorations=[
+                (-1,-1,"snowman"),(5,-1,"snowman"),(-4,1,"lantern"),
+                (-4,3,"pine"),(5,3,"pine"),(-1,5,"rock"),(3,5,"rock"),(5,5,"snowman"),
+            ]
         ),
 
         #l9
@@ -685,7 +964,11 @@ def build_levels():
             (2,3),  #portal
             [(0,2), (3,3)], #traps
             16,
-            fox=(-2,3)
+            fox=(-2,3),
+            decorations=[
+                (-1,-1,"mushroom"),(4,-1,"mushroom"),(-3,1,"mushroom"),(-3,4,"mushroom"),
+                (4,4,"rock"),(3,-1,"flower"),(-1,4,"flower")
+            ]
         ),
 
         #l10
@@ -702,7 +985,12 @@ def build_levels():
             (4,4), #portal
             [(3,2), (2,3)],  #trap
             30,
-            fox=(2,2)
+            fox=(2,2),
+            decorations=[
+                (-1,-1,"tree"),(-1,5,"pine"),(5,5,"tree"),
+                (-1,0,"barrel"),(5,0,"sign"),
+                (2,-1,"flower"),(2,5,"mushroom"),(0,5,"rock"),(4,-1,"cactus"),
+            ]
         ),
     ]
 
@@ -724,7 +1012,11 @@ def recompute_level_center():
     )
 
     size = max(max_x - min_x + 1, max_y - min_y + 1)
-    camera_radius = 700 + size * 90
+    camera_radius = 500 + size * 90
+    if current_level >= 6:  # levels 7-10 (0-indexed)
+        camera_radius = 400 + size * 60  # closer camera
+    else:
+        camera_radius = 500 + size * 90  # normal camera
 
 def current_level_data():
     return levels[current_level]
@@ -1369,7 +1661,7 @@ def handle_ui_click(mx, my):
             saved = selected_cards[:]
             restart_current_level()
             selected_cards = saved
-            start_card_execution()
+            # DO NOT autoplay
             return
 
         if state == STATE_MENU:
@@ -1549,52 +1841,6 @@ def idle():
     portal_angle += 1.2  
     glutPostRedisplay()
 
-def draw_tree(wx, wy, base_z):
-    glPushMatrix()
-    glTranslatef(wx, wy, base_z)
-
-    # Bottom base block (yellow-green, large)
-    glColor3f(0.55, 0.78, 0.22)
-    glPushMatrix()
-    glTranslatef(0, 0, 8)
-    draw_cube_scaled(44, 44, 16)
-    draw_box_outline(44, 44, 16)
-    glPopMatrix()
-
-    # Middle block (teal/blue, slightly smaller)
-    glColor3f(0.20, 0.62, 0.72)
-    glPushMatrix()
-    glTranslatef(0, 0, 24)
-    draw_cube_scaled(36, 36, 16)
-    draw_box_outline(36, 36, 16)
-    glPopMatrix()
-
-    # Trunk (thin, dark)
-    glColor3f(0.30, 0.18, 0.08)
-    glPushMatrix()
-    glTranslatef(0, 0, 44)
-    draw_cube_scaled(10, 10, 55)
-    draw_box_outline(10, 10, 55)
-    glPopMatrix()
-
-    # Top foliage block (big bright green square)
-    glColor3f(0.22, 0.75, 0.30)
-    glPushMatrix()
-    glTranslatef(0, 0, 105)
-    draw_cube_scaled(46, 46, 36)
-    draw_box_outline(46, 46, 36)
-    glPopMatrix()
-
-    # Smaller top cap (darker green)
-    glColor3f(0.15, 0.58, 0.22)
-    glPushMatrix()
-    glTranslatef(0, 0, 130)
-    draw_cube_scaled(30, 30, 22)
-    draw_box_outline(30, 30, 22)
-    glPopMatrix()
-
-    glPopMatrix()
-
 def draw_level_scene():
     for gx, gy in walkable_tiles:
         base = (0.29, 0.78, 0.65) if (gx + gy) % 2 == 0 else (0.22, 0.68, 0.58)
@@ -1612,7 +1858,7 @@ def draw_level_scene():
     for c in carrots:
         if c not in collected:
             draw_carrot(c[0], c[1])
-
+    draw_decorations()
     draw_portal(portal_tile[0], portal_tile[1], portal_active())
 
     if executing_cards and current_action == CARD_FORWARD and current_step_anim > 0:
@@ -1637,10 +1883,6 @@ def draw_level_scene():
         fz = current_level_data().get("heights", {}).get((fox_grid_x, fox_grid_y), 1) * 16
         fwx, fwy = grid_to_world(fox_grid_x, fox_grid_y)
         draw_fox(fwx, fwy, fox_dir, fz)
-    tree_positions = [(-3, -1),(-3,  2),( 5, -1),( 5,  2),]
-    for tx, ty in tree_positions:
-        twx, twy = grid_to_world(tx, ty)
-        draw_tree(twx, twy, 0)
 
     draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height + tile_z)
                 
@@ -1669,8 +1911,8 @@ def show_failed_overlay():
     draw_rect(300, 514, 700, 520, (0.85, 0.20, 0.20), True)
     draw_rect(300, 250, 700, 520, (0.75, 0.22, 0.22), False)
 
-    draw_text(388, 480, "FAILED!", GLUT_BITMAP_TIMES_ROMAN_24, (1.0, 0.28, 0.28))
-    draw_text(308, 440, "Sequence did not finish the level", color=(0.88, 0.88, 0.95))
+    draw_text(450, 480, "FAILED!", GLUT_BITMAP_TIMES_ROMAN_24, (1.0, 0.28, 0.28))
+    draw_text(380, 440, "Sequence did not finish the level", color=(0.88, 0.88, 0.95))
 
     glColor3f(0.28, 0.30, 0.42)
     glBegin(GL_LINES)
@@ -1679,17 +1921,17 @@ def show_failed_overlay():
 
     draw_rect(320, 375, 680, 415, (0.72, 0.16, 0.16), True)
     draw_rect(320, 375, 680, 415, (1.0, 0.48, 0.48), False)
-    draw_text(380, 388, "R  —  Restart Level", color=(1, 1, 1))
+    draw_text(450, 388, "RESTART", color=(1, 1, 1))
     register_click("RESTART", (320, 375, 680, 415))
 
     draw_rect(320, 325, 680, 365, (0.16, 0.46, 0.80), True)
     draw_rect(320, 325, 680, 365, (0.48, 0.78, 1.00), False)
-    draw_text(342, 338, "P  —  Try Same Sequence Again", color=(1, 1, 1))
+    draw_text(450, 338, "RETRY", color=(1, 1, 1))
     register_click("RETRY", (320, 325, 680, 365))
 
     draw_rect(320, 272, 680, 312, (0.25, 0.25, 0.35), True)
     draw_rect(320, 272, 680, 312, (0.60, 0.60, 0.80), False)
-    draw_text(375, 285, "M  —  Back to Menu", color=(0.85, 0.85, 1.0))
+    draw_text(450, 285, "MAIN MENU", color=(0.85, 0.85, 1.0))
     register_click("MENU", (320, 272, 680, 312))
 
     end_2d()
