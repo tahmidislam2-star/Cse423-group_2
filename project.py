@@ -1158,7 +1158,7 @@ def build_game_ui():
 
     # ── HUD top-left ──────────────────────────────────────────────
     draw_rect(0, WINDOW_H - 115, 370, WINDOW_H, (0.10, 0.12, 0.18), True)
-    draw_text(16, WINDOW_H - 28,  "Level %d/6" % (current_level + 1), color=(1, 1, 0.5))
+    draw_text(16, WINDOW_H - 28,  "Level %d/10" % (current_level + 1), color=(1, 1, 0.5))
     draw_text(16, WINDOW_H - 52,  "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
     draw_text(16, WINDOW_H - 76,  level_message, color=(0.82, 1, 0.82))
     draw_text(16, WINDOW_H - 100, "Cards: %d/%d" % (len(selected_cards), max_cards), color=(1, 1, 1))
