@@ -61,6 +61,12 @@ visited_tiles = set()
 collected = set()
 level_message = ""
 
+fox_grid_x = 0
+fox_grid_y = 0
+fox_dir = 1
+fox_active = False
+fox_present = False
+
 selected_cards = []
 executing_cards = False
 current_card_step = 0
@@ -485,7 +491,8 @@ def draw_rabbit(world_x, world_y, direction, color, hop):
     glPopMatrix()
 
 
-def make_level(tiles, start, start_facing, carrots_list, portal, trap_list, max_cards_level, heights=None):
+def make_level(tiles, start, start_facing, carrots_list, portal, trap_list,
+               max_cards_level, heights=None, fox=None):
     return {
         "tiles": set(tiles),
         "start": start,
@@ -495,98 +502,125 @@ def make_level(tiles, start, start_facing, carrots_list, portal, trap_list, max_
         "traps": set(trap_list),
         "max_cards": max_cards_level,
         "heights": heights or {},
+        "fox": fox
     }
+
 
 
 def build_levels():
     global levels
     levels = [
 
-        #l1
-        make_level(
-            [
-                (0,0), (1,0), (2,0),
-                (0,1), (1,1), (2,1),
-                (0,2), (1,2), (2,2)
-            ],
-            (0,0), 1,
-            [(1,0), (2,0), (2,1), (2,2)],  #carrots
-            (1,2),  #portal
-            [],
-            10
-        ),
+        # #l1
+        # make_level(
+        #     [
+        #         (0,0), (1,0), (2,0),
+        #         (0,1), (2,1),
+        #         (0,2), (1,2), (2,2)
+        #     ],
+        #     (0,0), 1,
+        #     [(1,0), (2,0), (2,1), (2,2)],  #carrots
+        #     (1,2),  #portal
+        #     [],
+        #     10
+        # ),
 
-        #l2
-        make_level(
-            [
-                (0,0), (1,0), (2,0), (2,1), (2,2), (1,2), (0,2), (1,3), (2,3)
-            ],
-            (0,0), 1,      
-            [(2,0), (2,2), (1,2)],  #carrots
-            (2,3),  #portal
-            [],
-            13
-        ),
+        # #l2
+        # make_level(
+        #     [
+        #         (0,0), (1,0), (2,0), (2,1), (2,2), (1,2), (0,2), (1,3), (2,3)
+        #     ],
+        #     (0,0), 1,      
+        #     [(2,0), (2,2), (1,2)],  #carrots
+        #     (2,3),  #portal
+        #     [],
+        #     13
+        # ),
 
-        #l3
-        make_level(
-            [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1),                 (3,1),
-                (0,2), (1,2), (2,2), (3,2),
-                (0,3),                 (3,3),
-                (0,4), (1,4), (2,4), (3,4)
-            ],
-            (0,0), 1,
-            [(2,0), (3,0), (3,2), (1,4), (3,4)],  #carrots
-            (0,4),  #portal
-            [],
-            16
-        ),
+        # #l3
+        # make_level(
+        #     [
+        #         (0,0), (1,0), (2,0), (3,0),
+        #         (0,1),                 (3,1),
+        #         (0,2), (1,2), (2,2), (3,2),
+        #         (0,3),                 (3,3),
+        #         (0,4), (1,4), (2,4), (3,4)
+        #     ],
+        #     (0,0), 1,
+        #     [(2,0), (3,0), (3,2), (1,4), (3,4)],  #carrots
+        #     (0,4),  #portal
+        #     [],
+        #     16
+        # ),
 
-        #l4
-        make_level(
-            [
-                (0,0), (1,0), (2,0), (3,0),
-                (0,1),        (2,1), (3,1),
-                (0,2), (1,2), (2,2),
-                (0,3), (1,3), (2,3), (3,3)
-            ],
-            (0,0), 1,
-            [(3,0), (2,1), (1,2)],   #carrots
-            (2,3),  #portal
-            [(0,2), (3,3)], #traps
-            16
-        ),
+        # #l4
+        # make_level(
+        #     [
+        #         (0,0), (1,0), (2,0), (3,0),
+        #         (0,1),        (2,1), (3,1),
+        #         (0,2), (1,2), (2,2),
+        #         (0,3), (1,3), (2,3), (3,3)
+        #     ],
+        #     (0,0), 1,
+        #     [(3,0), (2,1), (1,2)],   #carrots
+        #     (2,3),  #portal
+        #     [(0,2), (3,3)], #traps
+        #     16
+        # ),
         
-        #l5
+        # #l5
+        # make_level(
+        #     [
+        #         (0,0), (1,0), (2,0), (3,0),
+        #         (0,1),        (2,1),
+        #         (0,2), (1,2), (2,2), (3,2),
+        #                       (2,3), (3,3),
+        #         (0,4), (1,4), (2,4), (3,4)
+        #     ],
+        #     (0,0), 1,
+        #     [(3,0), (2,1), (3,2), (1,4), (3,4)],  #carrots
+        #     (0,4),    #portal
+        #     [(1,2), (0,1)],   #traps
+        #     20
+        # ),
+
+        #l6
         make_level(
             [
                 (0,0), (1,0), (2,0), (3,0),
-                (0,1),        (2,1),
-                (0,2), (1,2), (2,2), (3,2),
-                              (2,3), (3,3),
+                (0,1),        (3,1),(0,2),
+                (3,3), (1,2), (2,2), (3,2),
                 (0,4), (1,4), (2,4), (3,4)
             ],
             (0,0), 1,
-            [(3,0), (2,1), (3,2), (1,4), (3,4)],  #carrots
-            (0,4),                                  #portal
-            [(1,2), (0,1)],          #traps
-            20
+            [],
+            (0,4),
+            [],
+            20,
+            fox=(0,2)
         ),
+
     ]
 
 def recompute_level_center():
-    global level_center
+    global level_center, camera_radius
+
     if not walkable_tiles:
-        level_center = (0.0, 0.0)
+        level_center = (0,0)
         return
+
     min_x = min(t[0] for t in walkable_tiles)
     max_x = max(t[0] for t in walkable_tiles)
     min_y = min(t[1] for t in walkable_tiles)
     max_y = max(t[1] for t in walkable_tiles)
-    level_center = ((min_x + max_x) * TILE_SIZE / 2.0, (min_y + max_y) * TILE_SIZE / 2.0)
 
+    level_center = (
+        (min_x + max_x) * TILE_SIZE / 2,
+        (min_y + max_y) * TILE_SIZE / 2
+    )
+
+    size = max(max_x - min_x + 1, max_y - min_y + 1)
+    camera_radius = 700 + size * 90
 
 def current_level_data():
     return levels[current_level]
@@ -597,9 +631,11 @@ def reset_level(level_idx):
     global rabbit_grid_x, rabbit_grid_y, rabbit_dir, visited_tiles, collected, selected_cards
     global executing_cards, current_card_step, current_step_anim, move_start, move_target, current_action
     global hop_height, flash_tile, flash_amount, level_message, state
+    global fox_grid_x, fox_grid_y, fox_active, fox_present, fox_dir
 
     current_level = level_idx
     lvl = levels[level_idx]
+
     walkable_tiles = set(lvl["tiles"])
     traps = set(lvl["traps"])
     carrots = lvl["carrots"][:]
@@ -607,6 +643,14 @@ def reset_level(level_idx):
     start_tile = lvl["start"]
     start_dir = lvl["start_dir"]
     max_cards = lvl["max_cards"]
+
+    # FOX
+    fox_present = lvl["fox"] is not None
+    fox_active = False
+    if fox_present:
+        fox_grid_x, fox_grid_y = lvl["fox"]
+        fox_dir = 1
+
     recompute_level_center()
 
     rabbit_grid_x, rabbit_grid_y = start_tile
@@ -627,6 +671,95 @@ def reset_level(level_idx):
     state = STATE_PLAYING
     collect_carrot_if_here()
 
+def draw_fox(world_x, world_y, direction, hop=0):
+    angle = [0, -90, 180, 90][direction]
+
+    glPushMatrix()
+    glTranslatef(world_x, world_y, hop)
+    glRotatef(angle, 0, 0, 1)
+
+    # body (taller than rabbit)
+    glColor3f(0.95, 0.45, 0.08)
+    glPushMatrix()
+    glTranslatef(0, 0, 28)
+    draw_cube_scaled(46, 28, 54)
+    draw_box_outline(46, 28, 54)
+    glPopMatrix()
+
+    # head
+    glPushMatrix()
+    glTranslatef(0, 18, 66)
+    draw_cube_scaled(34, 26, 34)
+    draw_box_outline(34, 26, 34)
+    glPopMatrix()
+
+    # ears
+    for ex in (-10, 10):
+        glPushMatrix()
+        glTranslatef(ex, 20, 94)
+        draw_cube_scaled(10, 8, 28)
+        draw_box_outline(10, 8, 28)
+        glPopMatrix()
+
+    # legs
+    glColor3f(0.15, 0.15, 0.15)
+    for lx in (-14, 14):
+        glPushMatrix()
+        glTranslatef(lx, 0, 8)
+        draw_cube_scaled(12, 14, 16)
+        glPopMatrix()
+
+    # eyes
+    glColor3f(0,0,0)
+    for ex in (-8, 8):
+        glPushMatrix()
+        glTranslatef(ex, 30, 68)
+        draw_cube_scaled(5,4,5)
+        glPopMatrix()
+
+    glPopMatrix()
+
+def fox_can_see_rabbit():
+    global fox_grid_x, fox_grid_y, rabbit_grid_x, rabbit_grid_y
+    # Facing EAST
+    if rabbit_grid_y != fox_grid_y:
+        return False
+    if rabbit_grid_x <= fox_grid_x:
+        return False
+
+    for x in range(fox_grid_x + 1, rabbit_grid_x):
+        if (x, fox_grid_y) not in walkable_tiles:
+            return False
+    return True
+
+def move_fox():
+    global fox_grid_x, fox_grid_y, fox_dir, state, level_message
+
+    if not fox_present:
+        return
+
+    best = None
+    best_dist = 999999
+
+    for i, (dx, dy) in enumerate(DIRS):
+        nx = fox_grid_x + dx
+        ny = fox_grid_y + dy
+
+        if (nx, ny) not in walkable_tiles:
+            continue
+
+        dist = abs(nx - rabbit_grid_x) + abs(ny - rabbit_grid_y)
+
+        if dist < best_dist:
+            best_dist = dist
+            best = (nx, ny, i)
+
+    if best:
+        fox_grid_x, fox_grid_y, fox_dir = best
+
+    if (fox_grid_x, fox_grid_y) == (rabbit_grid_x, rabbit_grid_y):
+        state = STATE_GAMEOVER
+        level_message = "Fox caught you"
 
 def restart_current_level():
     reset_level(current_level)
@@ -1221,16 +1354,29 @@ def update_execution(dt=16):
     wave = 1.0 - (2.0 * t - 1.0) * (2.0 * t - 1.0)
     hop_height = (26.0 if current_action == CARD_FORWARD else 10.0) * wave
 
+
     if current_step_anim >= step_duration:
         current_step_anim = 0.0
         hop_height = 0.0
+
         collect_carrot_if_here()
+
+        # FOX ACTIVATION
+        global fox_active
+        if fox_present and not fox_active:
+            if fox_can_see_rabbit():
+                fox_active = True
+
+        # FOX MOVES ONLY WHEN RABBIT HOPS
+        if fox_present and fox_active:
+            move_fox()
+
         check_trap_or_finish()
+
         if state == STATE_PLAYING:
             current_card_step += 1
         else:
             executing_cards = False
-
 
 def update_flash():
     global flash_amount
@@ -1285,6 +1431,10 @@ def draw_level_scene():
             (rabbit_grid_x, rabbit_grid_y), 1) * 16
 
     wx, wy = grid_to_world(draw_x, draw_y)
+    if fox_present:
+        fz = current_level_data().get("heights", {}).get((fox_grid_x, fox_grid_y), 1) * 16
+        fwx, fwy = grid_to_world(fox_grid_x, fox_grid_y)
+        draw_fox(fwx, fwy, fox_dir, fz)
     draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height + tile_z)
 
 def draw_customize_preview():
