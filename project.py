@@ -1403,7 +1403,7 @@ def handle_ui_click(mx, my):
                 card_view_offset = 0
                 level_message = "Sequence cleared"
                 return
-
+            
 def start_card_execution():
     global executing_cards, current_card_step, current_step_anim, level_message
     if not selected_cards:
