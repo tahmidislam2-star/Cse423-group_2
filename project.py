@@ -353,113 +353,60 @@ def draw_portal(gx, gy, active):
     z = get_tile_z(gx, gy)
 
     glPushMatrix()
-    glTranslatef(wx, wy, z + 1)
+    glTranslatef(wx, wy, z + 10)
 
-    # colors
+    quad = gluNewQuadric()
+
     if active:
-        inner  = (0.40, 0.85, 1.00)
-        mid    = (0.10, 0.50, 1.00)
-        outer  = (0.05, 0.20, 0.80)
-        beam   = (0.20, 0.60, 1.00)
-        glow   = (0.00, 0.70, 1.00)
+        core_color = (0.2, 0.8, 1.0)
+        ring_color = (0.1, 0.4, 1.0)
+        beam_color = (0.3, 0.7, 1.0)
     else:
-        inner  = (0.30, 0.30, 0.55)
-        mid    = (0.18, 0.18, 0.42)
-        outer  = (0.10, 0.10, 0.30)
-        beam   = (0.20, 0.20, 0.45)
-        glow   = (0.15, 0.15, 0.40)
+        core_color = (0.3, 0.3, 0.5)
+        ring_color = (0.2, 0.2, 0.4)
+        beam_color = (0.3, 0.3, 0.5)
 
-    segments = 48
+    #outer
+    glColor3f(*ring_color)
+    glPushMatrix()
+    glTranslatef(0, 0, 1)
+    gluCylinder(quad, 45, 45, 5, 20, 1)
+    glPopMatrix()
 
-    # ── OUTER GLOW RING (widest, darkest) ──
-    glColor3f(outer[0], outer[1], outer[2])
-    glBegin(GL_QUAD_STRIP)
-    for i in range(segments + 1):
-        ang = deg_to_rad(360.0 / segments * i)
-        c, s = cos_approx(ang), sin_approx(ang)
-        glVertex3f(c * 26, s * 26, 0)
-        glVertex3f(c * 40, s * 40, 0)
-    glEnd()
+    #core
+    glColor3f(*core_color)
+    gluSphere(quad, 20, 16, 16)
 
-    # ── MID RING ──
-    glColor3f(mid[0], mid[1], mid[2])
-    glBegin(GL_QUAD_STRIP)
-    for i in range(segments + 1):
-        ang = deg_to_rad(360.0 / segments * i)
-        c, s = cos_approx(ang), sin_approx(ang)
-        glVertex3f(c * 22, s * 22, 0)
-        glVertex3f(c * 36, s * 36, 0)
-    glEnd()
+    #glow
+    glColor3f(1, 1, 1)
+    gluSphere(quad, 8, 12, 12)
 
-    # ── INNER BRIGHT RING ──
-    glColor3f(inner[0], inner[1], inner[2])
-    glBegin(GL_QUAD_STRIP)
-    for i in range(segments + 1):
-        ang = deg_to_rad(360.0 / segments * i)
-        c, s = cos_approx(ang), sin_approx(ang)
-        glVertex3f(c * 10, s * 10, 0)
-        glVertex3f(c * 22, s * 22, 0)
-    glEnd()
+    #rotators
+    glPushMatrix()
+    glRotatef(portal_angle, 0, 0, 1)
 
-    # ── BRIGHT CENTER DISC ──
-    glColor3f(glow[0], glow[1], glow[2])
-    glBegin(GL_TRIANGLE_FAN)
-    glVertex3f(0, 0, 0)
-    for i in range(segments + 1):
-        ang = deg_to_rad(360.0 / segments * i)
-        glVertex3f(cos_approx(ang) * 10, sin_approx(ang) * 10, 0)
-    glEnd()
+    glColor3f(*core_color)
+    for i in range(4):
+        glPushMatrix()
+        glRotatef(i * 90, 0, 0, 1)
+        glTranslatef(30, 0, 0)
+        glutSolidCube(8)
+        glPopMatrix()
 
-    # ── SPINNING DASHED RING (rotates with portal_angle) ──
-    glColor3f(inner[0], inner[1], inner[2])
-    glLineWidth(2)
-    glBegin(GL_LINES)
-    dash_count = 24
-    for i in range(dash_count):
-        ang1 = deg_to_rad((360.0 / dash_count * i) + portal_angle)
-        ang2 = deg_to_rad((360.0 / dash_count * i) + portal_angle + 6)
-        glVertex3f(cos_approx(ang1) * 30, sin_approx(ang1) * 30, 1)
-        glVertex3f(cos_approx(ang2) * 30, sin_approx(ang2) * 30, 1)
-    glEnd()
+    glPopMatrix()
 
-    # ── COUNTER-SPINNING INNER DASHES ──
-    glColor3f(glow[0], glow[1], glow[2])
-    glBegin(GL_LINES)
-    for i in range(dash_count):
-        ang1 = deg_to_rad((360.0 / dash_count * i) - portal_angle * 1.5)
-        ang2 = deg_to_rad((360.0 / dash_count * i) - portal_angle * 1.5 + 8)
-        glVertex3f(cos_approx(ang1) * 18, sin_approx(ang1) * 18, 1)
-        glVertex3f(cos_approx(ang2) * 18, sin_approx(ang2) * 18, 1)
-    glEnd()
-    glLineWidth(1)
-
-    # ── LIGHT BEAMS shooting upward ──
+    #beams
     if active:
-        beam_count = 8
-        for i in range(beam_count):
-            ang = deg_to_rad((360.0 / beam_count * i) + portal_angle * 0.5)
-            bx = cos_approx(ang) * 20
-            by = sin_approx(ang) * 20
-            # fade from bright base to transparent tip
-            glBegin(GL_TRIANGLES)
-            glColor3f(beam[0], beam[1], beam[2])
-            glVertex3f(bx - cos_approx(ang + deg_to_rad(90)) * 4,
-                       by - sin_approx(ang + deg_to_rad(90)) * 4, 0)
-            glVertex3f(bx + cos_approx(ang + deg_to_rad(90)) * 4,
-                       by + sin_approx(ang + deg_to_rad(90)) * 4, 0)
-            glColor3f(beam[0] * 0.2, beam[1] * 0.2, beam[2] * 0.2)
-            glVertex3f(bx * 0.4, by * 0.4, 120)   # beam tip height
-            glEnd()
+        for i in range(4):
+            glPushMatrix()
+            glRotatef(i * 90 + portal_angle * 0.5, 0, 0, 1)
+            glTranslatef(25, 0, 0)
 
-    # ── OUTER GLOW LINE ──
-    glColor3f(mid[0], mid[1], mid[2])
-    glLineWidth(2)
-    glBegin(GL_LINE_LOOP)
-    for i in range(segments):
-        ang = deg_to_rad(360.0 / segments * i)
-        glVertex3f(cos_approx(ang) * 44, sin_approx(ang) * 44, 0.5)
-    glEnd()
-    glLineWidth(1)
+            glColor3f(*beam_color)
+            glRotatef(-90, 1, 0, 0)
+            gluCylinder(quad, 3, 0, 80, 10, 1)
+
+            glPopMatrix()
 
     glPopMatrix()
 
@@ -690,7 +637,73 @@ def build_levels():
             20,
             fox=(0,2)
         ),
+        # l7
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0), (4,0),
+                (0,1),                       (4,1),
+                (0,2), (1,2), (2,2), (3,2), (4,2),
+                (0,3),                       (4,3),
+                (0,4), (1,4), (2,4), (3,4), (4,4), 
+                (-1,4),(-2,4),(-3,4),(-4,4)
+            ],
+            (0,0), 1,
+            [(2,0), (2,4), (0,2)],  # carrots 
+            (4,4),
+            [(1,2), (3,2)],  # traps
+            20,
+            fox=(-4,4)
+        ),
 
+        #l8
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0), (4,0),
+                (0,1), (-1, 2), (2,1), (4,1),
+                (0,2), (1,2), (2,2), (3,2), (4,2),
+                (0,3),  (-2,2), (2,3), (4,3), (-3,2),
+                (0,4), (1,4), (2,4), (3,4), (4,4)
+            ],
+            (0,0), 1,
+            [(4,0), (2,1), (4,2), (3,4)],  #carrots
+            (2,4),
+            [(1,2), (3,2), (2,3)],  #traps
+            20,
+            fox=(-3,2)
+        ),
+
+        #l9
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0),
+                (0,1), (-1,3), (2,1), (3,1),
+                (0,2), (1,2), (2,2), (-2, 3),
+                (0,3), (1,3), (2,3), (3,3)
+            ],
+            (0,0), 1,
+            [(3,0), (2,1), (1,2)],   #carrots
+            (2,3),  #portal
+            [(0,2), (3,3)], #traps
+            16,
+            fox=(-2,3)
+        ),
+
+        #l10
+        make_level(
+            [
+                (0,0), (1,0), (2,0), (3,0), (4,0),
+                (0,1),(2,2), (2,1), (4,3), (4,1),
+                (0,2), (1,2), (3,2), (4,2),
+                (1,3), (2,3), (3,3),
+                (0,4), (1,4), (2,4), (3,4), (4,4)
+            ],
+            (0,0), 1,
+            [(4,0), (2,0), (3,3), (1,4), (0,2)], #carrots
+            (4,4), #portal
+            [(3,2), (2,3)],  #trap
+            30,
+            fox=(2,2)
+        ),
     ]
 
 def recompute_level_center():
