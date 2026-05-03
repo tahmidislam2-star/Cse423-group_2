@@ -80,6 +80,7 @@ flash_tile = None
 flash_amount = 0.0
 carrot_bob_time = 0
 click_regions = []
+portal_angle = 0.0  
 
 TILE_SIZE = 96.0
 
@@ -1522,11 +1523,12 @@ def update_flash():
             flash_amount = 0.0
 
 def idle():
-    global cheat_message_timer, carrot_bob_time
+    global cheat_message_timer, carrot_bob_time,portal_angle
     update_execution()
     update_flash()
     update_clouds()
     carrot_bob_time += 0.04   # add this line
+    portal_angle += 1.2  
     glutPostRedisplay()
 
 def draw_level_scene():
