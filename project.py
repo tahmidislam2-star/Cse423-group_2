@@ -678,7 +678,26 @@ def draw_fox(world_x, world_y, direction, hop=0):
     glTranslatef(world_x, world_y, hop)
     glRotatef(angle, 0, 0, 1)
 
-    # body (taller than rabbit)
+    # === TAIL (large bushy sweep, placed first so body renders on top) ===
+    glPushMatrix()
+    glTranslatef(-20, -25, 40)
+    glRotatef(75, 0, 1, 0)
+    # main tail — large orange ellipsoid
+    glColor3f(0.95, 0.45, 0.08)
+    glPushMatrix()
+    glScalef(1.4, 0.8, 0.5)
+    draw_cube_scaled(44, 30, 44)
+    draw_box_outline(44, 30, 44)
+    glPopMatrix()
+    # white tip
+    glColor3f(0.96, 0.94, 0.88)
+    glPushMatrix()
+    glTranslatef(-20, 0, 0)
+    draw_cube_scaled(22, 22, 14)
+    glPopMatrix()
+    glPopMatrix()
+
+    # === BODY ===
     glColor3f(0.95, 0.45, 0.08)
     glPushMatrix()
     glTranslatef(0, 0, 28)
@@ -686,37 +705,76 @@ def draw_fox(world_x, world_y, direction, hop=0):
     draw_box_outline(46, 28, 54)
     glPopMatrix()
 
-    # head
+    # belly patch (cream/white, slightly inset on the front face)
+    glColor3f(0.94, 0.90, 0.80)
     glPushMatrix()
-    glTranslatef(0, 18, 66)
-    draw_cube_scaled(34, 26, 34)
-    draw_box_outline(34, 26, 34)
+    glTranslatef(0, 16, 28)           # push toward front face
+    draw_cube_scaled(22, 2, 36)       # wide flat patch
     glPopMatrix()
 
-    # ears
-    for ex in (-10, 10):
-        glPushMatrix()
-        glTranslatef(ex, 20, 94)
-        draw_cube_scaled(10, 8, 28)
-        draw_box_outline(10, 8, 28)
-        glPopMatrix()
+    # === NECK ===
+    glColor3f(0.95, 0.45, 0.08)
+    glPushMatrix()
+    glTranslatef(0, 0, 62)
+    draw_cube_scaled(24, 20, 16)
+    glPopMatrix()
 
-    # legs
-    glColor3f(0.15, 0.15, 0.15)
+    # === HEAD (wider + slightly longer snout axis) ===
+    glPushMatrix()
+    glTranslatef(0, 0, 82)
+    glColor3f(0.95, 0.45, 0.08)
+    draw_cube_scaled(36, 28, 36)
+    draw_box_outline(36, 28, 36)
+    glPopMatrix()
+
+    # white cheek / muzzle base (gives classic fox face split)
+    glColor3f(0.94, 0.90, 0.80)
+    glPushMatrix()
+    glTranslatef(0, 16, 80)
+    draw_cube_scaled(20, 2, 24)
+    glPopMatrix()
+
+    # === SNOUT (key fox feature — protrudes forward from head) ===
+    glColor3f(0.96, 0.78, 0.58)       # lighter tan
+    glPushMatrix()
+    glTranslatef(0, 14, 82)           # shift toward front
+    draw_cube_scaled(20, 8, 24)
+    draw_box_outline(20, 8, 24)
+    glPopMatrix()
+
+    # nose (black tip of snout)
+    glColor3f(0.08, 0.08, 0.08)
+    glPushMatrix()
+    glTranslatef(0, 18, 90)
+    draw_cube_scaled(8, 4, 8)
+    glPopMatrix()
+
+    # === EARS (tall, pointed — fox ears are big) ===
+    glColor3f(0.95, 0.45, 0.08)
+    for ex in (-12, 12):
+        glPushMatrix()
+        glTranslatef(ex, 0, 108)
+        draw_cube_scaled(10, 8, 26)   # taller than original
+        draw_box_outline(10, 8, 26)
+        glPopMatrix()
+        # inner ear — pink
+        glColor3f(0.95, 0.45, 0.08)  # reset for next ear
+
+    # === LEGS (dark lower halves, orange upper) ===
     for lx in (-14, 14):
+        # upper leg — orange
+        glColor3f(0.88, 0.38, 0.06)
         glPushMatrix()
-        glTranslatef(lx, 0, 8)
-        draw_cube_scaled(12, 14, 16)
+        glTranslatef(lx, 0, 14)
+        draw_cube_scaled(12, 14, 12)
         glPopMatrix()
-
-    # eyes
-    glColor3f(0,0,0)
-    for ex in (-8, 8):
+        # lower leg / sock — very dark (fox dark leg markings)
+        glColor3f(0.12, 0.10, 0.08)
         glPushMatrix()
-        glTranslatef(ex, 30, 68)
-        draw_cube_scaled(5,4,5)
+        glTranslatef(lx, 0, 4)
+        draw_cube_scaled(10, 12, 10)
         glPopMatrix()
-
+        
     glPopMatrix()
 
 def fox_can_see_rabbit():
