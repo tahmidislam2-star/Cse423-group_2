@@ -8,7 +8,7 @@ fovY = 70
 
 camera_angle = 315.0
 camera_radius = 920.0
-camera_height = 680.0
+camera_height =420
 CAMERA_MIN_HEIGHT = 260.0
 CAMERA_MAX_HEIGHT = 980.0
 CAMERA_STEP_ANGLE = 5.0
@@ -377,8 +377,8 @@ def draw_portal(gx, gy, active):
     for i in range(segments + 1):
         ang = deg_to_rad(360.0 / segments * i)
         c, s = cos_approx(ang), sin_approx(ang)
-        glVertex3f(c * 36, s * 36, 0)
-        glVertex3f(c * 44, s * 44, 0)
+        glVertex3f(c * 26, s * 26, 0)
+        glVertex3f(c * 40, s * 40, 0)
     glEnd()
 
     # ── MID RING ──
@@ -1157,10 +1157,10 @@ def build_game_ui():
     begin_2d()
 
     # ── HUD top-left ──────────────────────────────────────────────
-    draw_rect(0, WINDOW_H - 120, 280, WINDOW_H, (0.10, 0.12, 0.18), True)
-    draw_text(16, WINDOW_H - 28,  "Level %d/5" % (current_level + 1),  color=(1, 1, 0.5))
+    draw_rect(0, WINDOW_H - 115, 370, WINDOW_H, (0.10, 0.12, 0.18), True)
+    draw_text(16, WINDOW_H - 28,  "Level %d/6" % (current_level + 1), color=(1, 1, 0.5))
     draw_text(16, WINDOW_H - 52,  "Carrots: %d/%d" % (len(collected), len(carrots)), color=(1, 1, 1))
-    draw_text(16, WINDOW_H - 76,  level_message,  color=(0.82, 1, 0.82))
+    draw_text(16, WINDOW_H - 76,  level_message, color=(0.82, 1, 0.82))
     draw_text(16, WINDOW_H - 100, "Cards: %d/%d" % (len(selected_cards), max_cards), color=(1, 1, 1))
 
     if state == STATE_PAUSED:
@@ -1346,6 +1346,18 @@ def handle_ui_click(mx, my):
     for name, rect, extra in click_regions:
         if not inside_rect(mx, my, rect):
             continue
+        if name == "MENU":
+            state = STATE_MENU
+            return
+        if name == "RESTART" and state in (STATE_FAILED, STATE_GAMEOVER, STATE_WIN):
+            restart_current_level()
+            return
+        if name == "RETRY" and state == STATE_FAILED:
+            saved = selected_cards[:]
+            restart_current_level()
+            selected_cards = saved
+            start_card_execution()
+            return
 
         if state == STATE_MENU:
             if name == "P":
@@ -1371,13 +1383,16 @@ def handle_ui_click(mx, my):
 
         elif state == STATE_PLAYING:
             if name in TOOL_CARDS and not executing_cards:
-                if len(selected_cards) < max_cards:
+                if extra is not None and isinstance(extra, int):
+                    if 0 <= extra < len(selected_cards):
+                        selected_cards.pop(extra)
+                        if card_view_offset > 0:
+                            card_view_offset -= 1
+                        level_message = "Card removed"
+                elif len(selected_cards) < max_cards:
                     selected_cards.append(name)
-
-                    # shift view if more than visible
                     if len(selected_cards) > MAX_VISIBLE_CARDS:
-                        card_view_offset += 1   
-
+                        card_view_offset += 1
                     level_message = "Card added"
                 return
             if name == CARD_PLAY and not executing_cards and selected_cards:
@@ -1388,12 +1403,6 @@ def handle_ui_click(mx, my):
                 card_view_offset = 0
                 level_message = "Sequence cleared"
                 return
-            if extra is not None and isinstance(extra, int) and name in TOOL_CARDS and not executing_cards:
-                if 0 <= extra < len(selected_cards):
-                    selected_cards.pop(extra)
-                    level_message = "Card removed"
-                return
-
 
 def start_card_execution():
     global executing_cards, current_card_step, current_step_anim, level_message
@@ -1467,19 +1476,15 @@ def update_execution(dt=16):
 
     if not executing_cards or state != STATE_PLAYING:
         return
-
     if current_card_step >= len(selected_cards):
         executing_cards = False
         current_action = ""
         hop_height = 0.0
         if state == STATE_PLAYING:
-            if (rabbit_grid_x, rabbit_grid_y) == portal_tile and portal_active():
-                check_trap_or_finish()
-            elif state == STATE_PLAYING:
+            if not (all_carrots_collected() and (rabbit_grid_x, rabbit_grid_y) == portal_tile):
                 state = STATE_FAILED
                 level_message = "FAILED"
         return
-
     if current_step_anim == 0.0:
         current_action = selected_cards[current_card_step]
         execute_card_action(current_action)
@@ -1531,6 +1536,52 @@ def idle():
     portal_angle += 1.2  
     glutPostRedisplay()
 
+def draw_tree(wx, wy, base_z):
+    glPushMatrix()
+    glTranslatef(wx, wy, base_z)
+
+    # Bottom base block (yellow-green, large)
+    glColor3f(0.55, 0.78, 0.22)
+    glPushMatrix()
+    glTranslatef(0, 0, 8)
+    draw_cube_scaled(44, 44, 16)
+    draw_box_outline(44, 44, 16)
+    glPopMatrix()
+
+    # Middle block (teal/blue, slightly smaller)
+    glColor3f(0.20, 0.62, 0.72)
+    glPushMatrix()
+    glTranslatef(0, 0, 24)
+    draw_cube_scaled(36, 36, 16)
+    draw_box_outline(36, 36, 16)
+    glPopMatrix()
+
+    # Trunk (thin, dark)
+    glColor3f(0.30, 0.18, 0.08)
+    glPushMatrix()
+    glTranslatef(0, 0, 44)
+    draw_cube_scaled(10, 10, 55)
+    draw_box_outline(10, 10, 55)
+    glPopMatrix()
+
+    # Top foliage block (big bright green square)
+    glColor3f(0.22, 0.75, 0.30)
+    glPushMatrix()
+    glTranslatef(0, 0, 105)
+    draw_cube_scaled(46, 46, 36)
+    draw_box_outline(46, 46, 36)
+    glPopMatrix()
+
+    # Smaller top cap (darker green)
+    glColor3f(0.15, 0.58, 0.22)
+    glPushMatrix()
+    glTranslatef(0, 0, 130)
+    draw_cube_scaled(30, 30, 22)
+    draw_box_outline(30, 30, 22)
+    glPopMatrix()
+
+    glPopMatrix()
+
 def draw_level_scene():
     for gx, gy in walkable_tiles:
         base = (0.29, 0.78, 0.65) if (gx + gy) % 2 == 0 else (0.22, 0.68, 0.58)
@@ -1573,8 +1624,13 @@ def draw_level_scene():
         fz = current_level_data().get("heights", {}).get((fox_grid_x, fox_grid_y), 1) * 16
         fwx, fwy = grid_to_world(fox_grid_x, fox_grid_y)
         draw_fox(fwx, fwy, fox_dir, fz)
-    draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height + tile_z)
+    tree_positions = [(-3, -1),(-3,  2),( 5, -1),( 5,  2),]
+    for tx, ty in tree_positions:
+        twx, twy = grid_to_world(tx, ty)
+        draw_tree(twx, twy, 0)
 
+    draw_rabbit(wx, wy, rabbit_dir, rabbit_colors[saved_color_index], hop_height + tile_z)
+                
 def draw_customize_preview():
     set_static_menu_camera()
 
@@ -1585,9 +1641,96 @@ def draw_customize_preview():
 
 def show_failed_overlay():
     begin_2d()
-    draw_text(430, 430, "FAILED", GLUT_BITMAP_TIMES_ROMAN_24, (1, 0.25, 0.25))
-    draw_text(320, 380, "Sequence did not finish the level", color=(1, 1, 1))
-    draw_text(350, 340, "Press R to restart", color=(1, 1, 0.7))
+
+    glColor4f(0.0, 0.0, 0.0, 0.45)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glBegin(GL_QUADS)
+    glVertex2f(0, 0); glVertex2f(WINDOW_W, 0)
+    glVertex2f(WINDOW_W, WINDOW_H); glVertex2f(0, WINDOW_H)
+    glEnd()
+    glDisable(GL_BLEND)
+
+    draw_rect(306, 244, 706, 524, (0.04, 0.04, 0.08), True)
+    draw_rect(300, 250, 700, 520, (0.12, 0.14, 0.22), True)
+    draw_rect(300, 514, 700, 520, (0.85, 0.20, 0.20), True)
+    draw_rect(300, 250, 700, 520, (0.75, 0.22, 0.22), False)
+
+    draw_text(388, 480, "FAILED!", GLUT_BITMAP_TIMES_ROMAN_24, (1.0, 0.28, 0.28))
+    draw_text(308, 440, "Sequence did not finish the level", color=(0.88, 0.88, 0.95))
+
+    glColor3f(0.28, 0.30, 0.42)
+    glBegin(GL_LINES)
+    glVertex2f(320, 425); glVertex2f(680, 425)
+    glEnd()
+
+    draw_rect(320, 375, 680, 415, (0.72, 0.16, 0.16), True)
+    draw_rect(320, 375, 680, 415, (1.0, 0.48, 0.48), False)
+    draw_text(380, 388, "R  —  Restart Level", color=(1, 1, 1))
+    register_click("RESTART", (320, 375, 680, 415))
+
+    draw_rect(320, 325, 680, 365, (0.16, 0.46, 0.80), True)
+    draw_rect(320, 325, 680, 365, (0.48, 0.78, 1.00), False)
+    draw_text(342, 338, "P  —  Try Same Sequence Again", color=(1, 1, 1))
+    register_click("RETRY", (320, 325, 680, 365))
+
+    draw_rect(320, 272, 680, 312, (0.25, 0.25, 0.35), True)
+    draw_rect(320, 272, 680, 312, (0.60, 0.60, 0.80), False)
+    draw_text(375, 285, "M  —  Back to Menu", color=(0.85, 0.85, 1.0))
+    register_click("MENU", (320, 272, 680, 312))
+
+    end_2d()
+
+def show_gameover_overlay():
+    begin_2d()
+    glColor4f(0.0, 0.0, 0.0, 0.50)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glBegin(GL_QUADS)
+    glVertex2f(0, 0); glVertex2f(WINDOW_W, 0)
+    glVertex2f(WINDOW_W, WINDOW_H); glVertex2f(0, WINDOW_H)
+    glEnd()
+    glDisable(GL_BLEND)
+    draw_rect(306, 264, 706, 514, (0.05, 0.03, 0.03), True)
+    draw_rect(300, 270, 700, 510, (0.16, 0.10, 0.10), True)
+    draw_rect(300, 504, 700, 510, (0.95, 0.18, 0.10), True)
+    draw_rect(300, 270, 700, 510, (0.95, 0.22, 0.12), False)
+    draw_text(355, 470, "GAME OVER", GLUT_BITMAP_TIMES_ROMAN_24, (1.0, 0.22, 0.12))
+    draw_text(340, 430, level_message, color=(0.95, 0.72, 0.72)) 
+    draw_rect(320, 365, 680, 405, (0.72, 0.16, 0.16), True)
+    draw_rect(320, 365, 680, 405, (1.0, 0.48, 0.48), False)
+    draw_text(380, 378, "R  —  Restart Level", color=(1, 1, 1))
+    register_click("RESTART", (320, 365, 680, 405))
+    draw_rect(320, 312, 680, 352, (0.25, 0.25, 0.35), True)
+    draw_rect(320, 312, 680, 352, (0.60, 0.60, 0.80), False)
+    draw_text(375, 325, "M  —  Back to Menu", color=(0.85, 0.85, 1.0))
+    register_click("MENU", (320, 312, 680, 352))
+    end_2d()
+
+def show_win_overlay():
+    begin_2d()
+    glColor4f(0.0, 0.0, 0.0, 0.40)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glBegin(GL_QUADS)
+    glVertex2f(0, 0); glVertex2f(WINDOW_W, 0)
+    glVertex2f(WINDOW_W, WINDOW_H); glVertex2f(0, WINDOW_H)
+    glEnd()
+    glDisable(GL_BLEND)
+    draw_rect(256, 244, 756, 524, (0.04, 0.08, 0.05), True)
+    draw_rect(250, 250, 750, 520, (0.10, 0.16, 0.12), True)
+    draw_rect(250, 514, 750, 520, (0.22, 0.88, 0.38), True)
+    draw_rect(250, 250, 750, 520, (0.22, 0.88, 0.40), False)
+    draw_text(330, 480, "YOU WIN!", GLUT_BITMAP_TIMES_ROMAN_24, (0.35, 1.0, 0.52))
+    draw_text(280, 440, "All levels complete! Great job!", color=(0.78, 1.0, 0.84))
+    draw_rect(270, 375, 730, 415, (0.18, 0.62, 0.32), True)
+    draw_rect(270, 375, 730, 415, (0.35, 1.00, 0.52), False)
+    draw_text(375, 388, "P  —  Back to Menu", color=(1, 1, 1))
+    register_click("MENU", (270, 375, 730, 415))
+    draw_rect(270, 320, 730, 360, (0.18, 0.42, 0.72), True)
+    draw_rect(270, 320, 730, 360, (0.48, 0.78, 1.00), False)
+    draw_text(375, 333, "R  —  Play Again", color=(1, 1, 1))
+    register_click("RESTART", (270, 320, 730, 360))
     end_2d()
 
 def set_static_menu_camera():
@@ -1687,10 +1830,13 @@ def showScreen():
     else:
         set_perspective_camera()
         draw_level_scene()
+        build_game_ui()
         if state == STATE_FAILED:
             show_failed_overlay()
-        else:
-            build_game_ui()
+        elif state == STATE_GAMEOVER:
+            show_gameover_overlay()
+        elif state == STATE_WIN:
+            show_win_overlay()
 
     glutSwapBuffers()
 
